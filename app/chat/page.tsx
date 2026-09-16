@@ -46,6 +46,10 @@ export default async function ChatPage() {
         conversationId = newConversation.id
     }
 
+    if (!conversationId) {
+        throw new Error('Unable to determine your Jbot conversation.')
+    }
+
     const { data: messages, error: messagesError } = await supabase
         .from('jbot_messages')
         .select('id, role, content, created_at')
