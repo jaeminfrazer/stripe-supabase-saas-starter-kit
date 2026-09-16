@@ -8,12 +8,13 @@ declare global {
         }
     }
 }
-export default function StripePricingTable() {
+export default function StripePricingTable({ checkoutSessionSecret }: { checkoutSessionSecret?: string }) {
 
     return (
         <stripe-pricing-table
             pricing-table-id="prctbl_1UGAknGIHHpJQEluVOvnvQLI"
             publishable-key={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+            {...(checkoutSessionSecret && { 'customer-session-client-secret': checkoutSessionSecret })}
         >
         </stripe-pricing-table>
     )
