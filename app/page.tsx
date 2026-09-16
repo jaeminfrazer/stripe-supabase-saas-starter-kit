@@ -166,7 +166,7 @@ export default async function LandingPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">
-                      {product.price.unit_amount 
+                      {product.price?.unit_amount 
                         ? `$${(product.price.unit_amount / 100).toFixed(2)}/${product.price.recurring?.interval}`
                         : 'Custom'}
                     </p>
