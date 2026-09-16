@@ -40,6 +40,9 @@ export default async function DashboardHeader() {
                         <Link className="transition-colors hover:text-foreground/80 text-foreground/60" href="#">
                             Reports
                         </Link>
+                        <Link className="transition-colors hover:text-foreground/80 text-foreground" href="/chat">
+                            Jbot Chat
+                        </Link>
                     </nav>
                 </div>
                 <Button variant="outline" size="icon" className="mr-2 md:hidden">
