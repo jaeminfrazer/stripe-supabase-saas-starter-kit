@@ -4,16 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import Link from "next/link"
 import { Star, Check, Coins, UserCheck, Database } from "lucide-react"
 import StripePricingTable from "@/components/StripePricingTable"
-import { createClient } from '@/utils/supabase/server'
-import { createStripeCheckoutSession } from "@/utils/stripe/api"
 
 export default async function LandingPage() {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  const checkoutSessionSecret = user ? await createStripeCheckoutSession(user.email!) : undefined
-
   return (
     <div className="flex flex-col min-h-[100dvh]">
       <header className="px-4 lg:px-6 h-16 flex items-center  bg-white border-b fixed border-b-slate-200 w-full">
@@ -132,7 +124,7 @@ export default async function LandingPage() {
           <div className="container px-4 md:px-6">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center mb-4">Pricing Plans</h2>
             <p className="text-muted-foreground text-center mb-8 md:text-xl">Choose the perfect plan for your needs</p>
-            {checkoutSessionSecret && <StripePricingTable checkoutSessionSecret={checkoutSessionSecret} />}
+            <StripePricingTable />
           </div>
         </section>
         <section className="w-full py-10 md:py-20 lg:py-32 ">
