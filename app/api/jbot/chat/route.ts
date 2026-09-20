@@ -275,6 +275,12 @@ export async function POST(request: Request) {
             )
         }
 
+        console.error('JBOT ONBOARDING DEBUG:', {
+            authenticatedUserId: user.id,
+            onboardingRecord: onboarding,
+            onboardingError,
+        })
+
         const onboardingActive =
             onboarding?.status === 'not_started' ||
             onboarding?.status === 'in_progress'
