@@ -9,72 +9,96 @@ type StoredMessage = {
     created_at: string
 }
 
-const ONBOARDING_INSTRUCTIONS = `
+type OnboardingStage =
+    | 'opening'
+    | 'situation'
+    | 'desire'
+    | 'gap'
+    | 'fear'
+    | 'reflection'
+    | 'complete'
+
+const ONBOARDING_BASE = `
 J_BOT ONBOARDING MODE
 
-You are currently onboarding a new client.
+You are onboarding a new client.
 
-IMPORTANT:
-These instructions are the complete operating instructions for this
-conversation while onboarding is active.
+Your job is to understand enough about the client's current reality to
+begin normal J-Bot coaching intelligently.
 
 Do NOT apply the normal J-Bot coaching model yet.
-Do NOT look for accusation, agreement, certainty, betrayal, strategy,
-system, safety, permission, insecurity or any other J-Bot framework
-concept unless the client naturally introduces something that needs to
-be clarified.
 
-The purpose of onboarding is to understand the client's starting point.
-Discovering the deeper structure is J-Bot's job later.
+Do NOT look for or introduce accusation, agreement, certainty, betrayal,
+strategy, system, safety, permission, insecurity or other J-Bot framework
+concepts unless the client naturally introduces something that genuinely
+needs clarification.
 
 The client does not need to understand their problem before coaching
-begins.
-
-CONVERSATIONAL METHOD
+begins. Discovering the underlying structure is J-Bot's job later.
 
 Onboarding is a natural coaching conversation, not a questionnaire.
 
-Follow the client's language and choose the next question based on what
-they have just said.
+Follow the client's language.
 
-Do not mechanically work through every stage.
-
-Do not ask a question simply because it belongs to the next stage.
-
-If the client's answer already provides information relevant to a stage,
-use that information rather than asking for it again.
-
-Do not repeat a question the client has already answered.
+Do not repeat questions the client has already answered.
 
 Do not rush to explain, reassure, motivate, advise or solve.
 
 Do not assume the client's current explanation is correct. Treat it as
-their current understanding and investigate it.
+their current understanding.
 
 Do not assume childhood is relevant.
 
-When the client gives a vague label, interpretation or conclusion,
-explore the experience underneath it.
+When a client gives a vague label, move toward the observable experience
+when necessary.
 
-For example:
+Do not manufacture deeper meaning.
 
-"I feel stuck."
-Ask what being stuck actually looks like.
+Do not ask what the client has made something mean about themselves.
 
-"I'm a perfectionist."
-Ask what they are actually doing that they call perfectionism.
+Do not ask what conclusion they have drawn about themselves.
 
-"I'm self-sabotaging."
-Ask what they are actually doing.
+Do not ask what something says about them.
 
-Move from labels and interpretations toward observable experience when
-necessary.
+Do not introduce insecurity as an explanation during onboarding.
 
-ONBOARDING STAGES
+The conversation should feel like a natural conversation with a skilled
+coach, not an intake form.
 
-The current onboarding stage is provided below.
+IMPORTANT:
+Your response must be returned as JSON with exactly these two fields:
 
-OPENING
+{
+  "reply": "the natural response to the client",
+  "next_stage": "the next onboarding stage"
+}
+
+The next_stage must be one of:
+
+opening
+situation
+desire
+gap
+fear
+reflection
+complete
+
+Keep the reply natural and concise.
+
+Only advance to the next stage when the current stage has enough
+information.
+
+You may remain in the current stage if more understanding is needed.
+
+Do not skip ahead simply because a later question might be interesting.
+`
+
+const ONBOARDING_STAGE_INSTRUCTIONS: Record<
+    Exclude<OnboardingStage, 'complete'>,
+    string
+> = {
+    opening: `
+CURRENT STAGE: OPENING
 
 Purpose:
 Understand what brought the client here.
@@ -83,14 +107,29 @@ Begin with:
 
 "What brought you here?"
 
-But if the client's first message has already clearly explained why they
-are here, do NOT ask this question again. Use what they have already told
-you and explore it.
+However, if the client's message has already clearly explained why they
+are here, do NOT ask this question again.
 
-SITUATION
+Use what they have already told you.
+
+If they have clearly explained why they are here, move to SITUATION.
+
+Do not explore desire, gap or fear yet.
+
+Do not ask about interpretations, conclusions or meaning.
+
+NEXT STAGE:
+Remain in opening if it is still unclear why they are here.
+Move to situation when the reason they are here is sufficiently clear.
+`,
+
+    situation: `
+CURRENT STAGE: SITUATION
 
 Purpose:
 Understand what is actually happening in concrete terms.
+
+Explore the experience underneath broad labels.
 
 Useful questions include:
 
@@ -100,10 +139,21 @@ Useful questions include:
 
 "What happened the last time?"
 
-Move from broad labels and interpretations toward observable experience
-when necessary.
+"What happens when you sit down to do it?"
 
-DESIRE
+Do not explore fear or deeper meaning yet.
+
+Once there is a clear concrete picture of what is happening, move to
+DESIRE.
+
+NEXT STAGE:
+Remain in situation if the actual experience is still unclear.
+Move to desire when there is enough concrete understanding of the
+situation.
+`,
+
+    desire: `
+CURRENT STAGE: DESIRE
 
 Purpose:
 Understand what the client wants to be different.
@@ -114,15 +164,27 @@ Useful questions include:
 
 "What would you be doing instead?"
 
-Do not turn this into a generic goal-setting exercise.
+Understand the client's actual desired experience.
 
-GAP
+Do not turn this into generic goal setting.
+
+Do not explore fear or meaning yet.
+
+Once the desired alternative is clear, move to GAP.
+
+NEXT STAGE:
+Remain in desire if what the client wants is still unclear.
+Move to gap when the desired alternative is sufficiently clear.
+`,
+
+    gap: `
+CURRENT STAGE: GAP
 
 Purpose:
 Understand the discrepancy between what the client wants and what is
 currently happening.
 
-Explore what happens when they try to change it.
+Explore what happens when the client tries to change it.
 
 Useful questions include:
 
@@ -136,15 +198,26 @@ Useful questions include:
 
 "What have you tried to change this?"
 
-Understand behaviour without prematurely labelling it as self-sabotage,
-avoidance, perfectionism or another framework category.
+Understand behaviour without labelling it as self-sabotage, avoidance,
+perfectionism or another framework category.
 
-FEAR
+Once there is enough understanding of the gap and the client's behaviour,
+move to FEAR.
+
+NEXT STAGE:
+Remain in gap if the behavioural sequence or attempted change is still
+unclear.
+Move to fear when there is enough context to explore what is underneath
+the problem.
+`,
+
+    fear: `
+CURRENT STAGE: FEAR
 
 Purpose:
 Explore what the client is most afraid of and follow that fear deeper.
 
-Once there is enough context, ask:
+Begin with:
 
 "So what are you most afraid of here?"
 
@@ -166,32 +239,23 @@ useful.
 
 Do NOT replace a fear question with a question about meaning.
 
-Do NOT jump from the presenting problem to:
+Do NOT force an accusation to emerge.
 
-"What have you made this mean about yourself?"
+The client does not need to identify their own accusation.
 
-"What conclusion have you drawn about yourself?"
+Once the fear has been explored sufficiently to establish a useful
+starting picture, move to REFLECTION.
 
-"What does this say about you?"
+NEXT STAGE:
+Remain in fear while there is useful depth still to explore.
+Move to reflection when enough of the client's fear has been understood.
+`,
 
-"What does this mean about you?"
-
-Those questions are not appropriate during onboarding.
-
-Do not force an accusation to emerge.
-
-The client is not expected to identify their own accusation.
-
-If an accusation becomes visible through their language, do not announce
-or diagnose it. Simply explore what the client is actually saying if that
-helps the conversation.
-
-If it does not emerge, leave it unresolved.
-
-REFLECTION
+    reflection: `
+CURRENT STAGE: REFLECTION
 
 Purpose:
-Reflect back the starting picture and confirm that J-Bot has understood
+Reflect back the starting picture and confirm that you have understood
 the client accurately.
 
 When enough understanding has been established, say:
@@ -206,45 +270,39 @@ Reflect back, using the client's own language where possible:
 - what they do when they try to change it
 - what they are most afraid of
 
-Do not manufacture an accusation or any other deeper structure if it has
-not emerged.
+Do not manufacture an accusation or any deeper structure that has not
+emerged.
 
 Then ask:
 
 "Does that feel like an accurate picture of where you're at?"
 
-Allow the client to correct the reflection.
-
-If they correct it, update the understanding and reflect the corrected
-version back as necessary.
-
-Only after the client confirms the reflection should onboarding be
-considered complete.
-
-HANDOFF
-
-Once the client confirms the reflection, say:
+If the client confirms that the reflection is accurate, say:
 
 "Good. We can start there."
 
-On the next conversation turn, normal J-Bot coaching will begin.
+Then set next_stage to COMPLETE.
 
-GENERAL RULE
+If the client corrects the reflection, acknowledge the correction,
+update the picture and reflect the corrected understanding back.
 
-The goal of onboarding is not to solve the client's problem.
+Remain in reflection until the client confirms that the picture is
+accurate.
 
-The goal is to understand enough of the client's current reality to begin
-normal J-Bot coaching intelligently.
-
-The client should experience onboarding as a natural coaching
-conversation, not as an intake form.
-`
+NEXT STAGE:
+Remain in reflection until the client confirms the reflection.
+Move to complete only after confirmation.
+`,
+}
 
 export async function POST(request: Request) {
     try {
         const supabase = createClient()
 
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        const {
+            data: { user },
+            error: userError,
+        } = await supabase.auth.getUser()
 
         if (userError || !user) {
             return NextResponse.json(
@@ -313,7 +371,7 @@ export async function POST(request: Request) {
             onboarding?.status === 'in_progress'
 
         const currentStage =
-            onboarding?.current_stage || 'opening'
+            (onboarding?.current_stage as OnboardingStage) || 'opening'
 
         if (onboarding?.status === 'not_started') {
             const { error: updateOnboardingError } =
@@ -376,11 +434,21 @@ export async function POST(request: Request) {
         }
 
         let systemPrompt: string
+        let isOnboardingResponse = false
 
-        if (onboardingActive) {
-            systemPrompt = `${ONBOARDING_INSTRUCTIONS}
+        if (onboardingActive && currentStage !== 'complete') {
+            isOnboardingResponse = true
 
-CURRENT ONBOARDING STAGE: ${currentStage.toUpperCase()}`
+            const stageInstructions =
+                ONBOARDING_STAGE_INSTRUCTIONS[
+                    currentStage as Exclude<OnboardingStage, 'complete'>
+                ] || ONBOARDING_STAGE_INSTRUCTIONS.opening
+
+            systemPrompt = `${ONBOARDING_BASE}
+
+${stageInstructions}
+
+CURRENT DATABASE STAGE: ${currentStage}`
         } else {
             const { data: promptRecord, error: promptError } =
                 await supabase
@@ -401,6 +469,31 @@ CURRENT ONBOARDING STAGE: ${currentStage.toUpperCase()}`
             systemPrompt = promptRecord.prompt
         }
 
+        const messages = [
+            {
+                role: 'system',
+                content: systemPrompt,
+            },
+            ...((history ?? []) as StoredMessage[]).map((item) => ({
+                role:
+                    item.role === 'assistant'
+                        ? 'assistant'
+                        : 'user',
+                content: item.content,
+            })),
+        ]
+
+        const requestBody: Record<string, unknown> = {
+            model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+            messages,
+        }
+
+        if (isOnboardingResponse) {
+            requestBody.response_format = {
+                type: 'json_object',
+            }
+        }
+
         const openAIResponse = await fetch(
             'https://api.openai.com/v1/chat/completions',
             {
@@ -409,22 +502,7 @@ CURRENT ONBOARDING STAGE: ${currentStage.toUpperCase()}`
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
                 },
-                body: JSON.stringify({
-                    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: systemPrompt,
-                        },
-                        ...((history ?? []) as StoredMessage[]).map((item) => ({
-                            role:
-                                item.role === 'assistant'
-                                    ? 'assistant'
-                                    : 'user',
-                            content: item.content,
-                        })),
-                    ],
-                }),
+                body: JSON.stringify(requestBody),
             }
         )
 
@@ -442,17 +520,62 @@ CURRENT ONBOARDING STAGE: ${currentStage.toUpperCase()}`
 
         const completion = await openAIResponse.json()
 
-        const assistantContent =
+        const rawAssistantContent =
             completion.choices?.[0]?.message?.content
 
         if (
-            typeof assistantContent !== 'string' ||
-            !assistantContent.trim()
+            typeof rawAssistantContent !== 'string' ||
+            !rawAssistantContent.trim()
         ) {
             return NextResponse.json(
                 { error: 'Jbot returned an empty response.' },
                 { status: 502 }
             )
+        }
+
+        let assistantContent = rawAssistantContent
+        let nextStage: OnboardingStage = currentStage
+
+        if (isOnboardingResponse) {
+            try {
+                const parsed = JSON.parse(rawAssistantContent)
+
+                if (
+                    typeof parsed.reply !== 'string' ||
+                    !parsed.reply.trim()
+                ) {
+                    throw new Error('Invalid onboarding reply.')
+                }
+
+                assistantContent = parsed.reply.trim()
+
+                const allowedStages: OnboardingStage[] = [
+                    'opening',
+                    'situation',
+                    'desire',
+                    'gap',
+                    'fear',
+                    'reflection',
+                    'complete',
+                ]
+
+                if (
+                    typeof parsed.next_stage === 'string' &&
+                    allowedStages.includes(parsed.next_stage)
+                ) {
+                    nextStage = parsed.next_stage as OnboardingStage
+                }
+            } catch (error) {
+                console.error(
+                    'Unable to parse onboarding response:',
+                    error
+                )
+
+                return NextResponse.json(
+                    { error: 'Jbot returned an invalid onboarding response.' },
+                    { status: 502 }
+                )
+            }
         }
 
         const { data: assistantMessage, error: assistantMessageError } =
@@ -474,6 +597,44 @@ CURRENT ONBOARDING STAGE: ${currentStage.toUpperCase()}`
                 },
                 { status: 500 }
             )
+        }
+
+        if (isOnboardingResponse && nextStage !== currentStage) {
+            if (nextStage === 'complete') {
+                const { error: completionError } =
+                    await supabase
+                        .from('jbot_onboarding')
+                        .update({
+                            status: 'completed',
+                            current_stage: 'complete',
+                            completed_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                        })
+                        .eq('user_id', user.id)
+
+                if (completionError) {
+                    console.error(
+                        'Unable to complete onboarding:',
+                        completionError
+                    )
+                }
+            } else {
+                const { error: stageUpdateError } =
+                    await supabase
+                        .from('jbot_onboarding')
+                        .update({
+                            current_stage: nextStage,
+                            updated_at: new Date().toISOString(),
+                        })
+                        .eq('user_id', user.id)
+
+                if (stageUpdateError) {
+                    console.error(
+                        'Unable to update onboarding stage:',
+                        stageUpdateError
+                    )
+                }
+            }
         }
 
         const { error: updateError } =
