@@ -18,6 +18,30 @@ export default async function ChatPage() {
         redirect('/login')
     }
 
+    // Get or create the user's onboarding record.
+    const { data: onboarding, error: onboardingError } = await supabase
+        .from('jbot_onboarding')
+        .select('status')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+    if (onboardingError) {
+        throw new Error('Unable to load your Jbot onboarding status.')
+    }
+
+    if (!onboarding) {
+        const { error: createOnboardingError } = await supabase
+            .from('jbot_onboarding')
+            .insert({
+                user_id: user.id,
+                status: 'not_started',
+            })
+
+        if (createOnboardingError) {
+            throw new Error('Unable to create your Jbot onboarding record.')
+        }
+    }
+
     const { data: existingConversation, error: conversationError } = await supabase
         .from('jbot_conversations')
         .select('id')
