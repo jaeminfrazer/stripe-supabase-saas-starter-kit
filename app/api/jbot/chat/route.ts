@@ -23,7 +23,8 @@ type OnboardingStage =
 const ONBOARDING_BASE = `
 J_BOT ONBOARDING MODE
 
-You are onboarding a new client.
+When onboarding is active, suspend normal coaching and follow the
+application's current onboarding stage instructions.
 
 Your job is to understand enough about the client's current reality to
 begin normal J-Bot coaching intelligently.
@@ -234,7 +235,25 @@ export async function POST(request: Request) {
             )
         }
 
-        let systemPrompt: string
+        // Always load the master prompt. It is J-Bot's permanent operating
+        // system, including its permanent onboarding rule.
+        const { data: promptRecord, error: promptError } =
+            await supabase
+                .from('jbot_system_prompt')
+                .select('prompt')
+                .eq('active', true)
+                .order('updated_at', { ascending: false })
+                .limit(1)
+                .maybeSingle()
+
+        if (promptError || !promptRecord?.prompt) {
+            return NextResponse.json(
+                { error: 'Jbot is not configured yet.' },
+                { status: 503 }
+            )
+        }
+
+        let systemPrompt = promptRecord.prompt
         let isOnboardingResponse = false
 
         if (onboardingActive && currentStage !== 'complete') {
@@ -266,29 +285,14 @@ export async function POST(request: Request) {
                 )
             }
 
-            systemPrompt = `${ONBOARDING_BASE}
+            systemPrompt = `${systemPrompt}
 
-${stageInstructions}
+${ONBOARDING_BASE}
 
-CURRENT DATABASE STAGE: ${currentStage}`
-        } else {
-            const { data: promptRecord, error: promptError } =
-                await supabase
-                    .from('jbot_system_prompt')
-                    .select('prompt')
-                    .eq('active', true)
-                    .order('updated_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle()
+CURRENT DATABASE STAGE: ${currentStage}
 
-            if (promptError || !promptRecord?.prompt) {
-                return NextResponse.json(
-                    { error: 'Jbot is not configured yet.' },
-                    { status: 503 }
-                )
-            }
-
-            systemPrompt = promptRecord.prompt
+CURRENT STAGE INSTRUCTIONS:
+${stageInstructions}`
         }
 
         const messages = [
