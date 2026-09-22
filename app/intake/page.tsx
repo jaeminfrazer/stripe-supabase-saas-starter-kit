@@ -9,7 +9,7 @@ const questions = [
         key: "tell_me_about_you",
         title: "1. Tell me about you.",
         prompt:
-            "I'd love to hear about what's happening in your world right now. What has brought you to this moment where you're ready for lasting change?\n\nGive me the current state of play in your health, finances, relationships and sense of self.",
+            "I would love to hear about what is happening in your world right now. What has brought you to this moment where you are ready for lasting change?\n\nGive me the current state of play in your health, finances, relationships and sense of self.",
     },
     {
         key: "hindrances",
@@ -39,7 +39,7 @@ const questions = [
         key: "what_have_you_tried",
         title: "6. What have you tried?",
         prompt:
-            "What have you tried to change, fix or overcome these problems? What hasn't worked?",
+            "What have you tried to change, fix or overcome these problems? What has not worked?",
     },
     {
         key: "history",
@@ -88,7 +88,7 @@ export default function IntakePage() {
             } = await supabase.auth.getUser()
 
             if (userError || !user) {
-                setError("We couldn't identify your account.")
+                setError("We could not identify your account.")
                 setIsLoading(false)
                 return
             }
@@ -102,7 +102,7 @@ export default function IntakePage() {
                 .maybeSingle()
 
             if (intakeError) {
-                setError("We couldn't load your intake. Please try again.")
+                setError("We could not load your intake. Please try again.")
                 setIsLoading(false)
                 return
             }
@@ -147,7 +147,7 @@ export default function IntakePage() {
         } = await supabase.auth.getUser()
 
         if (userError || !user) {
-            setError("We couldn't identify your account.")
+            setError("We could not identify your account.")
             setIsSaving(false)
             return
         }
@@ -166,7 +166,7 @@ export default function IntakePage() {
             )
 
         if (saveError) {
-            setError("We couldn't save your intake. Please try again.")
+            setError("We could not save your intake. Please try again.")
             setIsSaving(false)
             return
         }
@@ -197,14 +197,14 @@ export default function IntakePage() {
                 </h1>
 
                 <p className="mt-4 text-base leading-7 text-muted-foreground">
-                    Before we begin, I'd like to get a picture of who you are,
-                    what's happening in your life, what's getting in the way
-                    and what you want.
+                    Before we begin, I would like to get a picture of who you
+                    are, what is happening in your life, what is getting in the
+                    way and what you want.
                 </p>
 
                 <p className="mt-2 text-base leading-7 text-muted-foreground">
-                    There are no right answers. Just tell me what you think,
-                    in your own words.
+                    There are no right answers. Just tell me what you think, in
+                    your own words.
                 </p>
             </div>
 
