@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-
 import { createClient } from '@/utils/supabase/server'
 
 type StoredMessage = {
@@ -426,6 +425,8 @@ export async function POST(request: Request) {
             )
         }
 
+        const verifiedConversationId = conversation.id
+
         const { data: onboarding, error: onboardingError } =
             await supabase
                 .from('jbot_onboarding')
@@ -468,7 +469,7 @@ export async function POST(request: Request) {
             await supabase
                 .from('jbot_messages')
                 .insert({
-                    conversation_id: conversation.id,
+                    conversation_id: verifiedConversationId,
                     role: 'user',
                     content,
                 })
@@ -486,7 +487,7 @@ export async function POST(request: Request) {
             await supabase
                 .from('jbot_messages')
                 .select('id, role, content, created_at')
-                .eq('conversation_id', conversation.id)
+                .eq('conversation_id', verifiedConversationId)
                 .order('created_at', { ascending: true })
                 .limit(100)
 
@@ -599,7 +600,7 @@ export async function POST(request: Request) {
             await supabase
                 .from('jbot_messages')
                 .insert({
-                    conversation_id: conversation.id,
+                    conversation_id: verifiedConversationId,
                     role: 'assistant',
                     content: assistantContent.trim(),
                 })
@@ -622,7 +623,7 @@ export async function POST(request: Request) {
                 .update({
                     updated_at: new Date().toISOString(),
                 })
-                .eq('id', conversation.id)
+                .eq('id', verifiedConversationId)
                 .eq('user_id', user.id)
 
         if (updateError) {
