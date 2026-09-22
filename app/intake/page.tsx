@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { createClient } from "@/utils/supabase/client"
 
@@ -71,11 +72,11 @@ const emptyForm: IntakeData = {
 
 export default function IntakePage() {
     const supabase = createClient()
+    const router = useRouter()
 
     const [form, setForm] = useState<IntakeData>(emptyForm)
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
-    const [saved, setSaved] = useState(false)
     const [error, setError] = useState("")
 
     useEffect(() => {
@@ -130,7 +131,6 @@ export default function IntakePage() {
             ...current,
             [key]: value,
         }))
-        setSaved(false)
         setError("")
     }
 
@@ -138,7 +138,6 @@ export default function IntakePage() {
         event.preventDefault()
 
         setIsSaving(true)
-        setSaved(false)
         setError("")
 
         const {
@@ -171,8 +170,7 @@ export default function IntakePage() {
             return
         }
 
-        setSaved(true)
-        setIsSaving(false)
+        router.push("/chat")
     }
 
     if (isLoading) {
@@ -234,12 +232,6 @@ export default function IntakePage() {
                 {error && (
                     <p className="text-sm text-destructive">
                         {error}
-                    </p>
-                )}
-
-                {saved && (
-                    <p className="text-sm text-green-600">
-                        Your intake has been saved.
                     </p>
                 )}
 
