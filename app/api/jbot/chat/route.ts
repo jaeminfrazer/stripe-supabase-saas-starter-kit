@@ -8,118 +8,50 @@ type StoredMessage = {
     created_at: string
 }
 
-type OnboardingData = {
-    who_they_are: string | null
-    here_and_now: string | null
+type IntakeData = {
+    tell_me_about_you: string | null
+    hindrances: string | null
+    personality: string | null
+    pain_points: string | null
     goals: string | null
-    current_problem: string | null
+    what_have_you_tried: string | null
     history: string | null
-    their_map: string | null
-    open: string | null
 }
 
-const ONBOARDING_INSTRUCTIONS = `
-You are J-Bot during the client's onboarding process.
+function buildIntakeContext(intake: IntakeData) {
+    return `
+CLIENT INTAKE
 
-IMPORTANT:
-The client is being onboarded before the actual coaching begins.
+The following information was provided by the client during their intake before coaching began. Treat it as the client's own account of their life, circumstances, experiences and current understanding. Do not assume that their interpretations are objectively correct. Use the information as context for the coaching conversation.
 
-Your job during onboarding is to get a useful picture of the person and their situation. You are gathering context, not coaching them.
+1. TELL ME ABOUT YOU
 
-Do not diagnose them.
-Do not interpret their psychology.
-Do not introduce J-Bot's coaching framework.
-Do not talk about accusations, insecurity structures, safety, permission, strategies, needs, or other J-Bot concepts unless the client introduces the subject themselves.
-Do not try to solve their problems.
-Do not turn their answers into coaching.
-Do not tell them what their answers mean.
+${intake.tell_me_about_you ?? 'No answer provided.'}
 
-Be naturally curious, conversational and interested in getting to know them.
+2. HINDRANCES
 
-Gather information across these seven areas:
+${intake.hindrances ?? 'No answer provided.'}
 
-1. WHO THEY ARE
-Learn about the person, their age or life stage, family, relationships, children, work or business, health, finances, lifestyle and other people or circumstances that are relevant to understanding their life.
+3. PERSONALITY
 
-2. HERE AND NOW
-Understand what life looks like at the moment. What's going well, what's difficult, what's putting pressure on them, what's changing, what opportunities exist and what is currently occupying their attention.
+${intake.personality ?? 'No answer provided.'}
 
-3. GOALS
-Understand what they want. Ask about important goals, desired outcomes and what they would like their life to look like.
+4. PAIN POINTS
 
-4. CURRENT PROBLEM
-Understand what has brought them here. What is the problem they are experiencing? What does it look like in real life? How long has it been happening and what impact is it having?
+${intake.pain_points ?? 'No answer provided.'}
 
-5. HISTORY
-Understand relevant history. Previous experiences, important events, previous versions of the current problem and previous coaching, therapy or other support where relevant.
+5. WHAT DO YOU WANT?
 
-6. THEIR MAP
-Understand how they currently see the situation. What do they think is going on? What do they think is causing the problem? What do they think needs to change?
+${intake.goals ?? 'No answer provided.'}
 
-7. OPEN
-Give them room to tell you anything else they think J-Bot should know before the coaching begins.
+6. WHAT HAVE YOU TRIED?
 
-Do not interrogate them with a rigid questionnaire. Let the conversation flow naturally. Ask one useful question at a time and follow what they give you.
+${intake.what_have_you_tried ?? 'No answer provided.'}
 
-You may acknowledge what they have said, but do not coach it.
+7. HISTORY
 
-The client should feel that this is preliminary setup, not a coaching session.
-
-Opening message:
-
-"Before we get into the actual coaching, I’m going to get you onboarded first.
-
-This is just a chance for me to get a picture of who you are, what’s going on in your life, what you want, and what’s brought you here. Nothing to solve yet and no need to have the right answers.
-
-We’ll take it from there once I’ve got a bit of context. Let’s start with you. Tell me a little about yourself and what your life looks like at the moment."
+${intake.history ?? 'No answer provided.'}
 `
-
-const EXTRACTION_INSTRUCTIONS = `
-You are maintaining a concise onboarding record for a coaching client.
-
-Extract only information the client has actually provided in the conversation.
-
-Do not diagnose, interpret or infer psychological structures.
-Do not add information that the client has not stated.
-Do not convert ordinary facts into coaching conclusions.
-
-Maintain these seven fields:
-
-who_they_are:
-Information about who the person is and relevant life context.
-
-here_and_now:
-Their current situation and what is happening in their life now.
-
-goals:
-What they want and important goals or desired outcomes.
-
-current_problem:
-The problem or problems that brought them here, including concrete examples and impact.
-
-history:
-Relevant history and previous experiences.
-
-their_map:
-What the client themselves says they think is going on, causing the problem, or needs to change.
-
-open:
-Other information the client says J-Bot should know.
-
-For each field, produce a concise consolidated summary of everything relevant currently known from the conversation.
-
-If a field has no information, return null.
-
-Return valid JSON only.
-`
-
-function cleanValue(value: unknown): string | null {
-    if (typeof value !== 'string') {
-        return null
-    }
-
-    const cleaned = value.trim()
-    return cleaned ? cleaned : null
 }
 
 export async function POST(request: Request) {
@@ -185,51 +117,37 @@ export async function POST(request: Request) {
         const verifiedConversationId = conversation.id
 
         const {
-            data: onboarding,
-            error: onboardingError,
+            data: intake,
+            error: intakeError,
         } = await supabase
-            .from('jbot_onboarding')
-            .select('status, current_stage')
+            .from('jbot_onboarding_data')
+            .select(
+                'tell_me_about_you, hindrances, personality, pain_points, goals, what_have_you_tried, history'
+            )
             .eq('user_id', verifiedUserId)
             .maybeSingle()
 
-        if (onboardingError) {
+        if (intakeError) {
             return NextResponse.json(
                 {
-                    error: 'Unable to load onboarding status.',
-                    details: onboardingError.message,
+                    error: 'Unable to load your intake.',
+                    details: intakeError.message,
                 },
                 { status: 500 }
             )
         }
 
-        const onboardingActive =
-            onboarding?.status === 'not_started' ||
-            onboarding?.status === 'in_progress'
-
-        if (onboarding?.status === 'not_started') {
-            const { error: startError } = await supabase
-                .from('jbot_onboarding')
-                .update({
-                    status: 'in_progress',
-                    started_at: new Date().toISOString(),
-                    current_stage: 'opening',
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('user_id', verifiedUserId)
-
-            if (startError) {
-                return NextResponse.json(
-                    {
-                        error: 'Unable to start onboarding.',
-                        details: startError.message,
-                    },
-                    { status: 500 }
-                )
-            }
+        if (!intake) {
+            return NextResponse.json(
+                { error: 'Please complete your intake before starting coaching.' },
+                { status: 400 }
+            )
         }
 
-        const { data: userMessage, error: userMessageError } = await supabase
+        const {
+            data: userMessage,
+            error: userMessageError,
+        } = await supabase
             .from('jbot_messages')
             .insert({
                 conversation_id: verifiedConversationId,
@@ -265,32 +183,28 @@ export async function POST(request: Request) {
             )
         }
 
-        let systemPrompt = ONBOARDING_INSTRUCTIONS
+        const {
+            data: promptRecord,
+            error: promptError,
+        } = await supabase
+            .from('jbot_system_prompt')
+            .select('prompt')
+            .eq('active', true)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
 
-        if (!onboardingActive) {
-            const {
-                data: promptRecord,
-                error: promptError,
-            } = await supabase
-                .from('jbot_system_prompt')
-                .select('prompt')
-                .eq('active', true)
-                .order('updated_at', { ascending: false })
-                .limit(1)
-                .maybeSingle()
-
-            if (promptError || !promptRecord) {
-                return NextResponse.json(
-                    {
-                        error: 'Unable to load J-Bot instructions.',
-                        details: promptError?.message,
-                    },
-                    { status: 500 }
-                )
-            }
-
-            systemPrompt = promptRecord.prompt
+        if (promptError || !promptRecord) {
+            return NextResponse.json(
+                {
+                    error: 'Unable to load J-Bot instructions.',
+                    details: promptError?.message,
+                },
+                { status: 500 }
+            )
         }
+
+        const intakeContext = buildIntakeContext(intake as IntakeData)
 
         const openAIResponse = await fetch(
             'https://api.openai.com/v1/chat/completions',
@@ -305,7 +219,11 @@ export async function POST(request: Request) {
                     messages: [
                         {
                             role: 'system',
-                            content: systemPrompt,
+                            content: promptRecord.prompt,
+                        },
+                        {
+                            role: 'system',
+                            content: intakeContext,
                         },
                         ...((history ?? []) as StoredMessage[]).map((item) => ({
                             role:
@@ -362,104 +280,6 @@ export async function POST(request: Request) {
                 },
                 { status: 500 }
             )
-        }
-
-        if (onboardingActive) {
-            const extractionMessages = [
-                {
-                    role: 'system',
-                    content: EXTRACTION_INSTRUCTIONS,
-                },
-                ...((history ?? []) as StoredMessage[]).map((item) => ({
-                    role:
-                        item.role === 'assistant'
-                            ? 'assistant'
-                            : 'user',
-                    content: item.content,
-                })),
-                {
-                    role: 'assistant',
-                    content: assistantContent,
-                },
-            ]
-
-            const extractionResponse = await fetch(
-                'https://api.openai.com/v1/chat/completions',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-                    },
-                    body: JSON.stringify({
-                        model:
-                            process.env.OPENAI_MODEL || 'gpt-4o-mini',
-                        messages: extractionMessages,
-                        response_format: {
-                            type: 'json_object',
-                        },
-                    }),
-                }
-            )
-
-            if (extractionResponse.ok) {
-                const extractionCompletion =
-                    await extractionResponse.json()
-
-                const extractionContent =
-                    extractionCompletion.choices?.[0]?.message?.content
-
-                if (extractionContent) {
-                    try {
-                        const extracted =
-                            JSON.parse(extractionContent) as OnboardingData
-
-                        const onboardingData = {
-                            user_id: verifiedUserId,
-                            who_they_are: cleanValue(
-                                extracted.who_they_are
-                            ),
-                            here_and_now: cleanValue(
-                                extracted.here_and_now
-                            ),
-                            goals: cleanValue(extracted.goals),
-                            current_problem: cleanValue(
-                                extracted.current_problem
-                            ),
-                            history: cleanValue(extracted.history),
-                            their_map: cleanValue(
-                                extracted.their_map
-                            ),
-                            open: cleanValue(extracted.open),
-                            updated_at: new Date().toISOString(),
-                        }
-
-                        const { error: onboardingDataError } =
-                            await supabase
-                                .from('jbot_onboarding_data')
-                                .upsert(onboardingData, {
-                                    onConflict: 'user_id',
-                                })
-
-                        if (onboardingDataError) {
-                            console.error(
-                                'Onboarding data update error:',
-                                onboardingDataError
-                            )
-                        }
-                    } catch (parseError) {
-                        console.error(
-                            'Unable to parse onboarding extraction:',
-                            parseError
-                        )
-                    }
-                }
-            } else {
-                console.error(
-                    'Onboarding extraction failed:',
-                    await extractionResponse.text()
-                )
-            }
         }
 
         await supabase
