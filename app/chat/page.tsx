@@ -18,28 +18,19 @@ export default async function ChatPage() {
         redirect('/login')
     }
 
-    // Get or create the user's onboarding record.
-    const { data: onboarding, error: onboardingError } = await supabase
-        .from('jbot_onboarding')
-        .select('status')
+    // Check whether the user has completed the intake form.
+    const { data: intake, error: intakeError } = await supabase
+        .from('jbot_onboarding_data')
+        .select('user_id')
         .eq('user_id', user.id)
         .maybeSingle()
 
-    if (onboardingError) {
-        throw new Error('Unable to load your Jbot onboarding status.')
+    if (intakeError) {
+        throw new Error('Unable to load your intake status.')
     }
 
-    if (!onboarding) {
-        const { error: createOnboardingError } = await supabase
-            .from('jbot_onboarding')
-            .insert({
-                user_id: user.id,
-                status: 'not_started',
-            })
-
-        if (createOnboardingError) {
-            throw new Error('Unable to create your Jbot onboarding record.')
-        }
+    if (!intake) {
+        redirect('/intake')
     }
 
     const { data: existingConversation, error: conversationError } = await supabase
@@ -89,7 +80,9 @@ export default async function ChatPage() {
             <div className="mx-auto flex max-w-4xl flex-col">
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold tracking-tight">Jbot</h1>
-                    <p className="mt-2 text-muted-foreground">Your personal coaching assistant.</p>
+                    <p className="mt-2 text-muted-foreground">
+                        Your personal coaching assistant.
+                    </p>
                 </div>
                 <JbotChat
                     conversationId={conversationId}
