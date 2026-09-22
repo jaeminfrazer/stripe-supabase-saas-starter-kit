@@ -504,13 +504,6 @@ export async function POST(request: Request) {
             )
         }
 
-        /*
-         * During onboarding, ONLY the onboarding instructions are sent.
-         *
-         * The master J-Bot prompt is deliberately not included.
-         *
-         * Once onboarding is marked completed, the master prompt is used.
-         */
         let systemPrompt: string
 
         if (onboardingActive) {
@@ -534,6 +527,17 @@ export async function POST(request: Request) {
 
             systemPrompt = promptRecord.prompt
         }
+
+        // TEMPORARY DIAGNOSTIC.
+        // This stops the request before OpenAI so we can verify
+        // which onboarding branch the live server is actually using.
+        return NextResponse.json({
+            debug: true,
+            onboardingStatus: onboarding?.status ?? null,
+            currentStage: onboarding?.current_stage ?? null,
+            onboardingActive,
+            promptMode: onboardingActive ? 'ONBOARDING' : 'MASTER',
+        })
 
         const messages = [
             {
