@@ -29,15 +29,21 @@ export default async function DashboardLayout({
         redirect("/login");
     }
 
+    const userEmail = user.email;
+
+    if (!userEmail) {
+        redirect("/login");
+    }
+
     // Temporary development access for Jaemin.
     // This bypasses the Stripe subscription gate while we build and test Jbot.
-    const isJaemin = user.email === "jaemin@jaeminfrazer.com";
+    const isJaemin = userEmail === "jaemin@jaeminfrazer.com";
 
     if (!isJaemin) {
         const checkUserInDB = await db
             .select()
             .from(usersTable)
-            .where(eq(usersTable.email, user.email));
+            .where(eq(usersTable.email, userEmail));
 
         if (!checkUserInDB[0] || checkUserInDB[0].plan === "none") {
             console.log("User has no plan selected");
