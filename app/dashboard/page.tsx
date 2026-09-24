@@ -1,20 +1,53 @@
-import { redirect } from 'next/navigation'
+THE UNHINDERED EXPERIENCE
 
-import { createClient } from '@/utils/supabase/server'
+Welcome, Jaemin.
 
-export default async function Dashboard() {
-    const supabase = createClient()
+Six months to understand what has been getting in your way,
+dissolve the structures that keep you stuck,
+and create more of what you actually want.
 
-    const { data, error } = await supabase.auth.getUser()
-    if (error || !data?.user) {
-        redirect('/login')
-    }
 
-    return (
-        <main className="flex-1">
-            <div className="container">
-                Hello {data.user.email}
-            </div>
-        </main>)
+YOUR JOURNEY
 
-}
+✓ Intake
+  Complete
+
+→ What do I actually want?
+  Your current focus
+
+○ Self-Trust
+○ Neediness
+○ Gameplay
+○ Avatar
+○ Self-Permission
+
+
+CONTINUE
+
+You are currently working with Jbot.
+
+[ Continue with Jbot ]
+
+
+THIS WEEK
+
+GROUP COACHING
+Thursday 12:00pm
+
+[ Book your place ]
+
+
+RESOURCES
+
+WATCH   READ   LISTEN   DO
+
+[ Explore resources ]
+
+
+PRIVATE ACCESS
+
+Want to take something further?
+
+Book a private session with Jaemin.
+
+[ Book a 1:1 ]
