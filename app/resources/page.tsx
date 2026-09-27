@@ -49,7 +49,7 @@ export default async function ResourcesPage() {
 
                     <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
                         Ideas, distinctions and practices to help you see
-                        yourself and the game you're playing more clearly.
+                        yourself and the game you&apos;re playing more clearly.
                     </p>
                 </div>
 
@@ -91,7 +91,9 @@ export default async function ResourcesPage() {
 
                                                 {resource.description && (
                                                     <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                                                        {resource.description}
+                                                        {
+                                                            resource.description
+                                                        }
                                                     </p>
                                                 )}
                                             </div>
