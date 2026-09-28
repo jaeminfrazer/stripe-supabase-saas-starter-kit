@@ -1,4 +1,5 @@
-import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+
+import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 export const usersTable = pgTable('users_table', {
     id: text('id').primaryKey(),
@@ -6,6 +7,9 @@ export const usersTable = pgTable('users_table', {
     email: text('email').notNull().unique(),
     plan: text('plan').notNull(),
     stripe_id: text('stripe_id').notNull(),
+    beta_access_expires_at: timestamp('beta_access_expires_at', {
+        withTimezone: true,
+    }),
 });
 
 export type InsertUser = typeof usersTable.$inferInsert;
