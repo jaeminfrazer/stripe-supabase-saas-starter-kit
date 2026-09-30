@@ -1,3 +1,4 @@
+
 import DashboardHeader from "@/components/DashboardHeader";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -36,7 +37,6 @@ export default async function DashboardLayout({
     }
 
     // Temporary development access for Jaemin.
-    // This bypasses the Stripe subscription gate while we build and test Jbot.
     const isJaemin = userEmail === "jaemin@jaeminfrazer.com";
 
     if (!isJaemin) {
@@ -45,8 +45,22 @@ export default async function DashboardLayout({
             .from(usersTable)
             .where(eq(usersTable.email, userEmail));
 
-        if (!checkUserInDB[0] || checkUserInDB[0].plan === "none") {
-            console.log("User has no plan selected");
+        const dbUser = checkUserInDB[0];
+
+        if (!dbUser) {
+            console.log("User not found in database");
+            redirect("/subscribe");
+        }
+
+        const hasSubscription = dbUser.plan !== "none";
+
+        const hasActiveBetaAccess =
+            dbUser.beta_access_expires_at !== null &&
+            dbUser.beta_access_expires_at !== undefined &&
+            dbUser.beta_access_expires_at.getTime() > Date.now();
+
+        if (!hasSubscription && !hasActiveBetaAccess) {
+            console.log("User has no active subscription or beta access");
             redirect("/subscribe");
         }
     }
