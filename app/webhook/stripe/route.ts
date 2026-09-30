@@ -18,29 +18,48 @@ function addSixMonths(date: Date): Date {
 export async function POST(req: Request) {
     try {
         const signature = req.headers.get('stripe-signature')
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+        const liveSecret = process.env.STRIPE_WEBHOOK_SECRET
+        const testSecret = process.env.STRIPE_TEST_WEBHOOK_SECRET
 
-        if (!signature || !webhookSecret) {
-            console.error('Missing Stripe signature or webhook secret')
+        if (!signature || (!liveSecret && !testSecret)) {
+            console.error('Missing Stripe signature or webhook secrets')
             return new Response('Webhook configuration error', { status: 400 })
         }
 
         const payload = await req.text()
 
-        let event: Stripe.Event
+        let event: Stripe.Event | undefined
+        let verifiedMode: 'live' | 'test' | undefined
 
-        try {
-            event = stripe.webhooks.constructEvent(
-                payload,
-                signature,
-                webhookSecret
-            )
-        } catch (err) {
-            console.error(
-                'Stripe signature verification failed:',
-                err instanceof Error ? err.message : 'Unknown error'
-            )
+        const secrets = [
+            { secret: liveSecret, mode: 'live' as const },
+            { secret: testSecret, mode: 'test' as const },
+        ]
+
+        for (const candidate of secrets) {
+            if (!candidate.secret) continue
+
+            try {
+                event = stripe.webhooks.constructEvent(
+                    payload,
+                    signature,
+                    candidate.secret
+                )
+                verifiedMode = candidate.mode
+                break
+            } catch {
+                // Try the other configured secret.
+            }
+        }
+
+        if (!event || !verifiedMode) {
+            console.error('Stripe signature verification failed')
             return new Response('Invalid Stripe signature', { status: 400 })
+        }
+
+        if (event.livemode !== (verifiedMode === 'live')) {
+            console.error('Stripe event mode does not match signing secret')
+            return new Response('Stripe event mode mismatch', { status: 400 })
         }
 
         switch (event.type) {
