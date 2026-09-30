@@ -37,29 +37,24 @@ export default async function DashboardLayout({
     }
 
     // Temporary development access for Jaemin.
-    const isJaemin = userEmail === "jaemin@jaeminfrazer.com";
+    const isJaemin = userEmail.toLowerCase() === "jaemin@jaeminfrazer.com";
 
     if (!isJaemin) {
         const checkUserInDB = await db
             .select()
             .from(usersTable)
-            .where(eq(usersTable.email, userEmail));
+            .where(eq(usersTable.email, userEmail.toLowerCase()))
+            .limit(1);
 
         const dbUser = checkUserInDB[0];
 
-        if (!dbUser) {
-            console.log("User not found in database");
-            redirect("/subscribe");
-        }
-
-        const hasSubscription = dbUser.plan !== "none";
-
         const hasActiveBetaAccess =
-            dbUser.beta_access_expires_at !== null &&
-            dbUser.beta_access_expires_at !== undefined &&
-            dbUser.beta_access_expires_at.getTime() > Date.now();
+            !!dbUser?.beta_access_expires_at &&
+            new Date(dbUser.beta_access_expires_at) > new Date();
 
-        if (!hasSubscription && !hasActiveBetaAccess) {
+        const hasSubscription = !!dbUser && dbUser.plan !== "none";
+
+        if (!dbUser || (!hasSubscription && !hasActiveBetaAccess)) {
             console.log("User has no active subscription or beta access");
             redirect("/subscribe");
         }
