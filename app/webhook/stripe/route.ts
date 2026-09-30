@@ -2,7 +2,7 @@
 import { db } from '@/utils/db/db'
 import { betaPurchases, usersTable } from '@/utils/db/schema'
 import { stripe } from '@/utils/stripe/api'
-import { eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import type Stripe from 'stripe'
 
 export const runtime = 'nodejs'
@@ -11,8 +11,132 @@ const BETA_PRICE_ID = 'price_1UKVfyGIHHpJQEluh2w4gG5F'
 
 function addSixMonths(date: Date): Date {
     const result = new Date(date)
+    const originalDay = result.getUTCDate()
+
+    result.setUTCDate(1)
     result.setUTCMonth(result.getUTCMonth() + 6)
+
+    const lastDayOfTargetMonth = new Date(
+        Date.UTC(
+            result.getUTCFullYear(),
+            result.getUTCMonth() + 1,
+            0
+        )
+    ).getUTCDate()
+
+    result.setUTCDate(Math.min(originalDay, lastDayOfTargetMonth))
     return result
+}
+
+async function recordAndApplyBetaPurchase(
+    session: Stripe.Checkout.Session,
+    email: string,
+    purchasedAt: Date,
+    expiresAt: Date
+) {
+    await db.transaction(async tx => {
+        // Insert once. Stripe may retry delivery of the same event.
+        await tx.insert(betaPurchases).values({
+            stripe_checkout_session_id: session.id,
+            email,
+            payment_status: 'paid',
+            purchased_at: purchasedAt,
+            expires_at: expiresAt,
+        }).onConflictDoNothing({
+            target: betaPurchases.stripe_checkout_session_id,
+        })
+
+        // Read the stored purchase, including on webhook retries.
+        const purchases = await tx.select()
+            .from(betaPurchases)
+            .where(
+                eq(
+                    betaPurchases.stripe_checkout_session_id,
+                    session.id
+                )
+            )
+            .limit(1)
+
+        const purchase = purchases[0]
+
+        if (!purchase || !purchase.expires_at) {
+            throw new Error('Could not retrieve recorded beta purchase')
+        }
+
+        // If signup has already happened, find the matching account.
+        const users = await tx.select()
+            .from(usersTable)
+            .where(eq(usersTable.email, email))
+            .limit(1)
+
+        const existingUser = users[0]
+
+        // If signup has not happened yet, leave the purchase unclaimed.
+        // The signup flow can claim it later.
+        if (!existingUser) {
+            console.log('Beta purchase stored for future signup:', email)
+            return
+        }
+
+        // If already claimed by another account, do not transfer access.
+        if (
+            purchase.claimed_user_id &&
+            purchase.claimed_user_id !== existingUser.id
+        ) {
+            console.error(
+                'Beta purchase is already claimed by another account:',
+                session.id
+            )
+            return
+        }
+
+        // Claim the purchase if it is still unclaimed.
+        if (!purchase.claimed_user_id) {
+            const claimed = await tx.update(betaPurchases)
+                .set({
+                    claimed_user_id: existingUser.id,
+                    claimed_at: new Date(),
+                })
+                .where(
+                    and(
+                        eq(betaPurchases.id, purchase.id),
+                        isNull(betaPurchases.claimed_user_id)
+                    )
+                )
+                .returning({
+                    id: betaPurchases.id,
+                })
+
+            // Another process may have claimed it concurrently.
+            if (claimed.length === 0) {
+                const latest = await tx.select()
+                    .from(betaPurchases)
+                    .where(eq(betaPurchases.id, purchase.id))
+                    .limit(1)
+
+                if (latest[0]?.claimed_user_id !== existingUser.id) {
+                    console.error(
+                        'Beta purchase was claimed by another account:',
+                        session.id
+                    )
+                    return
+                }
+            }
+        }
+
+        // Grant or refresh beta access for the matching account.
+        await tx.update(usersTable)
+            .set({
+                beta_access_expires_at: purchase.expires_at,
+            })
+            .where(eq(usersTable.id, existingUser.id))
+
+        console.log('Beta access applied to existing user:', {
+            sessionId: session.id,
+            userId: existingUser.id,
+            expiresAt: purchase.expires_at.toISOString(),
+        })
+    })
 }
 
 export async function POST(req: Request) {
@@ -23,7 +147,9 @@ export async function POST(req: Request) {
 
         if (!signature || (!liveSecret && !testSecret)) {
             console.error('Missing Stripe signature or webhook secrets')
-            return new Response('Webhook configuration error', { status: 400 })
+            return new Response('Webhook configuration error', {
+                status: 400,
+            })
         }
 
         const payload = await req.text()
@@ -54,12 +180,16 @@ export async function POST(req: Request) {
 
         if (!event || !verifiedMode) {
             console.error('Stripe signature verification failed')
-            return new Response('Invalid Stripe signature', { status: 400 })
+            return new Response('Invalid Stripe signature', {
+                status: 400,
+            })
         }
 
         if (event.livemode !== (verifiedMode === 'live')) {
             console.error('Stripe event mode does not match signing secret')
-            return new Response('Stripe event mode mismatch', { status: 400 })
+            return new Response('Stripe event mode mismatch', {
+                status: 400,
+            })
         }
 
         switch (event.type) {
@@ -89,7 +219,10 @@ export async function POST(req: Request) {
                 )
 
                 if (!isBetaPurchase) {
-                    console.log('Checkout is not the Jbot beta product:', session.id)
+                    console.log(
+                        'Checkout is not the Jbot beta product:',
+                        session.id
+                    )
                     break
                 }
 
@@ -104,27 +237,20 @@ export async function POST(req: Request) {
                         'Paid beta checkout has no customer email:',
                         session.id
                     )
-                    return new Response('Missing customer email', { status: 400 })
+                    return new Response('Missing customer email', {
+                        status: 400,
+                    })
                 }
 
                 const purchasedAt = new Date(session.created * 1000)
                 const expiresAt = addSixMonths(purchasedAt)
 
-                await db.insert(betaPurchases).values({
-                    stripe_checkout_session_id: session.id,
+                await recordAndApplyBetaPurchase(
+                    session,
                     email,
-                    payment_status: 'paid',
-                    purchased_at: purchasedAt,
-                    expires_at: expiresAt,
-                }).onConflictDoNothing({
-                    target: betaPurchases.stripe_checkout_session_id,
-                })
-
-                console.log('Beta purchase recorded:', {
-                    sessionId: session.id,
-                    email,
-                    expiresAt: expiresAt.toISOString(),
-                })
+                    purchasedAt,
+                    expiresAt
+                )
 
                 break
             }
