@@ -18,6 +18,20 @@ type IntakeData = {
     history: string | null
 }
 
+type KnowledgeRecord = {
+    id: string
+    title: string
+    category: string | null
+    content: string
+    when_to_use: string | null
+    retrieval_rules: string | null
+}
+
+type KnowledgeMetadata = Pick<
+    KnowledgeRecord,
+    'id' | 'title' | 'category' | 'when_to_use' | 'retrieval_rules'
+>
+
 function buildIntakeContext(intake: IntakeData) {
     return `
 CLIENT INTAKE
@@ -51,6 +65,97 @@ ${intake.what_have_you_tried ?? 'No answer provided.'}
 7. HISTORY
 
 ${intake.history ?? 'No answer provided.'}
+`
+}
+
+async function selectKnowledgeRecords(
+    content: string,
+    history: StoredMessage[],
+    records: KnowledgeMetadata[]
+): Promise<string[]> {
+    if (!records.length) return []
+
+    const recentHistory = history.slice(-8).map((item) => ({
+        role: item.role,
+        content: item.content.slice(0, 1500),
+    }))
+
+    try {
+        const response = await fetch(
+            'https://api.openai.com/v1/chat/completions',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                },
+                body: JSON.stringify({
+                    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+                    response_format: { type: 'json_object' },
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `You select internal coaching knowledge for J-Bot. Choose only records that would materially help J-Bot respond to the user's latest message in the context of the recent conversation. Use the record descriptions and retrieval rules, not keyword matching alone. Choose zero to three records; prefer fewer when sufficient. Do not choose a record just because it might be generally relevant. Return only valid JSON in this shape: {"ids":["record-id"]}. Use only exact IDs from the supplied list. If no record would materially help, return {"ids":[]}.`,
+                        },
+                        {
+                            role: 'user',
+                            content: JSON.stringify({
+                                latest_user_message: content,
+                                recent_conversation: recentHistory,
+                                available_knowledge: records,
+                            }),
+                        },
+                    ],
+                }),
+            }
+        )
+
+        if (!response.ok) {
+            console.error('Jbot knowledge selection failed:', await response.text())
+            return []
+        }
+
+        const result = await response.json()
+        const raw = result.choices?.[0]?.message?.content
+        if (typeof raw !== 'string') return []
+
+        const parsed = JSON.parse(raw)
+        if (!Array.isArray(parsed.ids)) return []
+
+        const allowedIds = new Set(records.map((record) => record.id))
+        const validIds = parsed.ids.filter(
+            (id: unknown): id is string =>
+                typeof id === 'string' && allowedIds.has(id)
+        )
+        const uniqueIds: string[] = []
+        for (const id of validIds) {
+            if (!uniqueIds.includes(id)) uniqueIds.push(id)
+            if (uniqueIds.length === 3) break
+        }
+        return uniqueIds
+    } catch (error) {
+        // Knowledge retrieval must not make an otherwise working chat unavailable.
+        console.error('Jbot knowledge selection error:', error)
+        return []
+    }
+}
+
+function buildKnowledgeContext(records: KnowledgeRecord[]) {
+    if (!records.length) return ''
+
+    return `INTERNAL COACHING KNOWLEDGE
+
+The following records were selected because they may be relevant to this turn. Use them as specialised reference material, following their retrieval rules. Apply the relevant ideas to the user's actual experience; do not recite the records or mention this internal retrieval process. Do not force a framework when it does not fit.
+
+${records.map((record) => `
+---
+TITLE: ${record.title}
+CATEGORY: ${record.category ?? 'Uncategorised'}
+WHEN TO USE: ${record.when_to_use ?? 'Not specified'}
+RETRIEVAL RULES: ${record.retrieval_rules ?? 'Not specified'}
+CONTENT:
+${record.content}
+---`).join('\n')}
 `
 }
 
@@ -204,7 +309,45 @@ export async function POST(request: Request) {
             )
         }
 
+        // Load lightweight metadata first, then let OpenAI choose the records
+        // that are relevant to this turn. Full record contents are fetched only
+        // for the selected IDs.
+        const { data: knowledgeMetadata, error: knowledgeMetadataError } =
+            await supabase
+                .from('jbot_knowledge')
+                .select('id, title, category, when_to_use, retrieval_rules')
+                .eq('active', true)
+
+        let selectedKnowledge: KnowledgeRecord[] = []
+
+        if (knowledgeMetadataError) {
+            // Keep chat available if the optional knowledge library is unavailable.
+            console.error('Unable to load Jbot knowledge metadata:', knowledgeMetadataError)
+        } else {
+            const selectedIds = await selectKnowledgeRecords(
+                content,
+                (history ?? []) as StoredMessage[],
+                (knowledgeMetadata ?? []) as KnowledgeMetadata[]
+            )
+
+            if (selectedIds.length) {
+                const { data: knowledgeRecords, error: knowledgeRecordsError } =
+                    await supabase
+                        .from('jbot_knowledge')
+                        .select('id, title, category, content, when_to_use, retrieval_rules')
+                        .eq('active', true)
+                        .in('id', selectedIds)
+
+                if (knowledgeRecordsError) {
+                    console.error('Unable to load selected Jbot knowledge:', knowledgeRecordsError)
+                } else {
+                    selectedKnowledge = (knowledgeRecords ?? []) as KnowledgeRecord[]
+                }
+            }
+        }
+
         const intakeContext = buildIntakeContext(intake as IntakeData)
+        const knowledgeContext = buildKnowledgeContext(selectedKnowledge)
 
         const openAIResponse = await fetch(
             'https://api.openai.com/v1/chat/completions',
@@ -225,6 +368,9 @@ export async function POST(request: Request) {
                             role: 'system',
                             content: intakeContext,
                         },
+                        ...(knowledgeContext
+                            ? [{ role: 'system', content: knowledgeContext }]
+                            : []),
                         ...((history ?? []) as StoredMessage[]).map((item) => ({
                             role:
                                 item.role === 'assistant'
