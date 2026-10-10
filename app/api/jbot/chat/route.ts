@@ -346,6 +346,17 @@ export async function POST(request: Request) {
             }
         }
 
+        // Diagnostic only: log selected record metadata, never user messages or record content.
+        console.info('Jbot knowledge retrieval result:', {
+            activeRecordCount: knowledgeMetadata?.length ?? 0,
+            selectedRecordCount: selectedKnowledge.length,
+            selectedRecords: selectedKnowledge.map((record) => ({
+                id: record.id,
+                title: record.title,
+                category: record.category,
+            })),
+        })
+
         const intakeContext = buildIntakeContext(intake as IntakeData)
         const knowledgeContext = buildKnowledgeContext(selectedKnowledge)
 
