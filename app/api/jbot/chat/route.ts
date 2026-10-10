@@ -123,12 +123,13 @@ async function selectKnowledgeRecords(
         if (!Array.isArray(parsed.ids)) return []
 
         const allowedIds = new Set(records.map((record) => record.id))
-        return [...new Set(
-            parsed.ids.filter(
-                (id: unknown): id is string =>
-                    typeof id === 'string' && allowedIds.has(id)
-            )
-        )].slice(0, 3)
+        const validIds = parsed.ids.filter(
+            (id: unknown): id is string =>
+                typeof id === 'string' && allowedIds.has(id)
+        )
+        return validIds
+            .filter((id, index) => validIds.indexOf(id) === index)
+            .slice(0, 3)
     } catch (error) {
         // Knowledge retrieval must not make an otherwise working chat unavailable.
         console.error('Jbot knowledge selection error:', error)
