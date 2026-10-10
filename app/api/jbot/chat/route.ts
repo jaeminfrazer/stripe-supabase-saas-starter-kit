@@ -127,9 +127,12 @@ async function selectKnowledgeRecords(
             (id: unknown): id is string =>
                 typeof id === 'string' && allowedIds.has(id)
         )
-        return validIds
-            .filter((id, index) => validIds.indexOf(id) === index)
-            .slice(0, 3)
+        const uniqueIds: string[] = []
+        for (const id of validIds) {
+            if (!uniqueIds.includes(id)) uniqueIds.push(id)
+            if (uniqueIds.length === 3) break
+        }
+        return uniqueIds
     } catch (error) {
         // Knowledge retrieval must not make an otherwise working chat unavailable.
         console.error('Jbot knowledge selection error:', error)
