@@ -91,7 +91,7 @@ export default async function DashboardPage() {
                         <p className="mt-3 text-sm leading-6 text-neutral-600">Join the weekly group coaching call and bring whatever you are working through.</p>
                         <button type="button" className="mt-6 inline-flex h-11 items-center border border-black/20 px-5 text-sm font-medium transition hover:bg-neutral-100">Book your place</button>
                     </section>
-                    <section className="border border-black/10 bg-white p-6 sm:p-8 md:col-span-2">
+                    <section className="border border-black/10 bg-white p-6 sm:p-8">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">Explore</p>
                         <h2 className="mt-3 text-xl font-semibold">The resource library</h2>
                         <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">Things to watch, read, listen to and do when a particular idea or distinction would expand your map.</p>
