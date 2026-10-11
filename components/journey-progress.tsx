@@ -13,12 +13,14 @@ const milestones = [
   'Live in aliveness and play',
 ]
 
-type Props = { onboardingComplete: boolean; assessmentStatus: string }
+type Props = { onboardingComplete: boolean; assessmentStatuses: Record<number, string> }
 
-export default function JourneyProgress({ onboardingComplete, assessmentStatus }: Props) {
+export default function JourneyProgress({ onboardingComplete, assessmentStatuses }: Props) {
   const complete = new Set<number>()
   if (onboardingComplete) complete.add(1)
-  if (assessmentStatus === 'complete') complete.add(4)
+  for (const milestone of [4, 5, 7]) {
+    if (assessmentStatuses[milestone] === 'complete') complete.add(milestone)
+  }
   const count = complete.size
 
   return <section className="rounded-xl border bg-background p-6 shadow-sm sm:p-8">
@@ -39,7 +41,8 @@ export default function JourneyProgress({ onboardingComplete, assessmentStatus }
       {milestones.map((milestone, index) => {
         const number = index + 1
         const done = complete.has(number)
-        const assessing = number === 4 && assessmentStatus === 'investigating'
+        const assessmentStatus = assessmentStatuses[number] ?? 'pending'
+        const assessing = [4, 5, 7].includes(number) && assessmentStatus === 'investigating'
         return <li key={milestone} className="flex items-center gap-3 rounded-lg border p-3 sm:gap-4">
           <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm ${done ? 'border-primary bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>{done ? '✓' : number}</div>
           <div className="min-w-0 flex-1">
@@ -47,7 +50,7 @@ export default function JourneyProgress({ onboardingComplete, assessmentStatus }
             {number === 1 && <p className="mt-1 text-xs text-muted-foreground">Complete when all seven onboarding answers have been provided.</p>}
             {number === 4 && <p className="mt-1 text-xs text-muted-foreground">Prototype assessment: Jbot tests the original accusation against behaviour and evidence from the defining moment.</p>}
           </div>
-          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${done ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>{done ? 'Complete' : assessing ? 'Assessing' : 'Pending'}</span>
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${done ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>{done ? 'Complete' : assessing ? 'Investigating' : assessmentStatus === 'pending' ? 'Pending' : 'In progress'}</span>
         </li>
       })}
     </ol>

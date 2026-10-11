@@ -12,20 +12,18 @@ export default async function DashboardPage() {
         user?.user_metadata?.full_name?.split(' ')[0] ||
         'there'
 
-    const [{ data: intake }, { data: assessment }, { data: resources }, { data: resourceProgress }] = user
+    const [{ data: intake }, { data: assessments }, { data: resources }, { data: resourceProgress }] = user
         ? await Promise.all([
             supabase.from('jbot_onboarding_data').select('tell_me_about_you,hindrances,personality,pain_points,goals,what_have_you_tried,history').eq('user_id', user.id).maybeSingle(),
-            supabase.from('jbot_stage_assessments').select('status,assessment').eq('user_id', user.id).eq('milestone_number', 4).maybeSingle(),
+            supabase.from('jbot_stage_assessments').select('milestone_number,status,assessment').eq('user_id', user.id).in('milestone_number', [4, 5, 7]),
             supabase.from('jbot_resources').select('id,title,description,category,tags').order('created_at', { ascending: true }),
             supabase.from('user_resource_progress').select('resource_id').eq('user_id', user.id),
         ])
-        : [{ data: null }, { data: null }, { data: [] }, { data: [] }]
+        : [{ data: null }, { data: [] }, { data: [] }, { data: [] }]
 
     const intakeFields = ['tell_me_about_you', 'hindrances', 'personality', 'pain_points', 'goals', 'what_have_you_tried', 'history'] as const
     const onboardingComplete = Boolean(intake && intakeFields.every(field => typeof intake[field] === 'string' && intake[field].trim().length > 0))
-    const assessmentSummary = assessment?.assessment && typeof assessment.assessment === 'object'
-        ? (assessment.assessment as { client_facing_summary?: string }).client_facing_summary
-        : undefined
+    const assessmentStatuses: Record<number, string> = Object.fromEntries((assessments ?? []).map(item => [item.milestone_number, item.status as string]))
 
     return (
         <main className="min-h-screen bg-muted/30 px-4 py-8 sm:px-6 lg:px-8">
@@ -44,11 +42,11 @@ export default async function DashboardPage() {
                         <h2 className="text-lg font-semibold">Jbot journey assessment</h2>
                     </div>
                     <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                        We’re building Jbot’s ability to recognise and assess genuine progress through each stage — not simply whether you’ve completed the resources. The first prototype is learning to test the original accusation against your language, behaviour and the evidence of the defining moment. This capability is still being developed and validated. Completing a resource does not, by itself, mean a milestone is resolved.
+                        We’re building Jbot’s ability to recognise and assess genuine progress through each stage — not simply whether you’ve completed the resources. Jbot assesses selected milestones at natural points in the conversation, testing evidence rather than counting messages or completed resources. These assessments are provisional and can change when new evidence emerges. Completing a resource does not, by itself, mean a milestone is resolved.
                     </p>
                 </section>
 
-                <JourneyProgress onboardingComplete={onboardingComplete} assessmentStatus={assessment?.status ?? 'pending'} />
+                <JourneyProgress onboardingComplete={onboardingComplete} assessmentStatuses={assessmentStatuses} />
 
                 <section className="rounded-xl border bg-background p-6 shadow-sm sm:p-8">
                     <h2 className="text-xl font-semibold">Resources you’ve completed</h2>
