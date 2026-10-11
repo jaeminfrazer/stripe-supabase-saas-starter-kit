@@ -61,6 +61,16 @@ export default function JbotChat({ conversationId, initialMessages }: JbotChatPr
                 result.userMessage,
                 result.assistantMessage,
             ])
+
+            // Run the provisional assessment against the saved conversation.
+            // A failed assessment must never interrupt the coaching chat.
+            void fetch('/api/jbot/assessment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversationId }),
+            }).catch((assessmentError) => {
+                console.error('Jbot assessment request failed:', assessmentError)
+            })
         } catch (submissionError) {
             setMessages((current) => current.filter((item) => item.id !== optimisticMessage.id))
             setError(submissionError instanceof Error ? submissionError.message : 'Unable to send your message.')
