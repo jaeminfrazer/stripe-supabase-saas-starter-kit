@@ -360,6 +360,15 @@ export async function POST(request: Request) {
         const intakeContext = buildIntakeContext(intake as IntakeData)
         const knowledgeContext = buildKnowledgeContext(selectedKnowledge)
 
+        const assessmentCheckpointInstruction = `
+ASSESSMENT CHECKPOINTS — NATURAL POINT ONLY
+Do not trigger an assessment after every message. Continue coaching naturally. When, and only when, you have reached a natural checkpoint for a milestone and have enough substantive conversation to assess it, finish your response with one machine-readable marker on its own final line:
+[[JBOT_ASSESS:4]] for Identify the accusation, only when you have explicitly tested the accusation against both behaviour/strategy and the evidence available.
+[[JBOT_ASSESS:5]] for Discover the defining moment, only when you have explored a candidate scene and are ready to review it against the defining-moment criteria. Do not imply it is complete just because a scene has emerged.
+[[JBOT_ASSESS:7]] for Well-formed outcomes, only when you have explored the desired outcome and reached a natural point to assess clarity, highest intention, chosen vehicle, consequences and readiness.
+You may include more than one marker only if each milestone independently reached a natural checkpoint. Never show, explain or refer to these markers to the client. Do not use a marker merely because the user mentions a milestone. The server removes markers before displaying or saving the response. The assessment engine, not you, decides the status.
+`
+
         const openAIResponse = await fetch(
             'https://api.openai.com/v1/chat/completions',
             {
@@ -374,6 +383,10 @@ export async function POST(request: Request) {
                         {
                             role: 'system',
                             content: promptRecord.prompt,
+                        },
+                        {
+                            role: 'system',
+                            content: assessmentCheckpointInstruction,
                         },
                         {
                             role: 'system',
@@ -406,15 +419,22 @@ export async function POST(request: Request) {
         }
 
         const completion = await openAIResponse.json()
-        const assistantContent =
+        const rawAssistantContent =
             completion.choices?.[0]?.message?.content
 
-        if (!assistantContent) {
+        if (!rawAssistantContent) {
             return NextResponse.json(
                 { error: 'J-Bot returned an empty response.' },
                 { status: 500 }
             )
         }
+
+        const assessmentMilestones = [...rawAssistantContent.matchAll(/\\[\\[JBOT_ASSESS:(4|5|7)\\]\\]/g)]
+            .map((match) => Number(match[1]))
+            .filter((milestone, index, all) => all.indexOf(milestone) === index)
+        const assistantContent = rawAssistantContent
+            .replace(/\\n?\\[\\[JBOT_ASSESS:(?:4|5|7)\\]\\]/g, '')
+            .trim()
 
         const {
             data: assistantMessage,
@@ -449,6 +469,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
             userMessage: userMessage as StoredMessage,
             assistantMessage: assistantMessage as StoredMessage,
+            assessmentMilestones,
         })
     } catch (error) {
         console.error('Jbot chat error:', error)
