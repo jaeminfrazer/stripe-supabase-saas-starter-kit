@@ -28,9 +28,7 @@ alter table public.jbot_stage_assessments enable row level security;
 drop policy if exists "Users can read their own stage assessments" on public.jbot_stage_assessments;
 create policy "Users can read their own stage assessments" on public.jbot_stage_assessments
   for select to authenticated using (auth.uid() = user_id);
+-- Assessment rows are read-only to the client. Trusted server code writes via
+-- the service-role client after verifying the authenticated conversation owner.
 drop policy if exists "Users can insert their own stage assessments" on public.jbot_stage_assessments;
-create policy "Users can insert their own stage assessments" on public.jbot_stage_assessments
-  for insert to authenticated with check (auth.uid() = user_id);
 drop policy if exists "Users can update their own stage assessments" on public.jbot_stage_assessments;
-create policy "Users can update their own stage assessments" on public.jbot_stage_assessments
-  for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
