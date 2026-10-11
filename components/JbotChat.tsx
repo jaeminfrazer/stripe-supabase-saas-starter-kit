@@ -23,6 +23,8 @@ export default function JbotChat({ conversationId, initialMessages }: JbotChatPr
     const [message, setMessage] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
+    const [assessmentStatus, setAssessmentStatus] = useState<'idle' | 'checking' | 'saved' | 'failed'>('idle')
+    const [assessmentError, setAssessmentError] = useState('')
 
     async function submitMessage(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -62,26 +64,29 @@ export default function JbotChat({ conversationId, initialMessages }: JbotChatPr
                 result.assistantMessage,
             ])
 
-            // Run the provisional assessment against the saved conversation.
-            // Keep coaching responsive, but make HTTP failures visible in logs.
+            // Run assessment and show its outcome, rather than silently dropping HTTP failures.
             void (async () => {
+                setAssessmentStatus('checking')
+                setAssessmentError('')
                 try {
-                    const assessmentResponse = await fetch('/api/jbot/assessment', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ conversationId }),
-                    })
-                    if (!assessmentResponse.ok) {
-                        const result = await assessmentResponse.json().catch(() => ({}))
-                        console.error('[jbot-assessment] request failed', {
-                            status: assessmentResponse.status,
-                            error: result.error || 'Unknown assessment error',
-                        })
-                    } else {
-                        console.info('[jbot-assessment] request completed', assessmentResponse.status)
-                    }
-                } catch (assessmentError) {
-                    console.error('[jbot-assessment] network request failed', assessmentError)
+                const assessmentResponse = await fetch('/api/jbot/assessment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ conversationId }),
+                })
+                const assessmentResult = await assessmentResponse.json().catch(() => ({}))
+                if (!assessmentResponse.ok) {
+                    const detail = assessmentResult.error || `Assessment request failed (HTTP ${assessmentResponse.status}).`
+                    console.error('[jbot-assessment] request failed', { status: assessmentResponse.status, error: detail })
+                    setAssessmentError(detail)
+                    setAssessmentStatus('failed')
+                } else {
+                    setAssessmentStatus('saved')
+                }
+                } catch (assessmentRequestError) {
+                    console.error('[jbot-assessment] network request failed', assessmentRequestError)
+                    setAssessmentError('Could not reach the assessment service. Your chat message was saved.')
+                    setAssessmentStatus('failed')
                 }
             })()
         } catch (submissionError) {
@@ -130,6 +135,17 @@ export default function JbotChat({ conversationId, initialMessages }: JbotChatPr
                 )}
 
                 {error && <p className="text-sm text-destructive">{error}</p>}
+                {assessmentStatus === 'checking' && (
+                    <p className="text-sm text-muted-foreground" role="status">Updating your journey assessment…</p>
+                )}
+                {assessmentStatus === 'saved' && (
+                    <p className="text-sm text-muted-foreground" role="status">Journey assessment updated.</p>
+                )}
+                {assessmentStatus === 'failed' && (
+                    <p className="text-sm text-destructive" role="alert">
+                        Journey assessment couldn&apos;t be updated: {assessmentError} Your chat is still available; this hasn&apos;t interrupted your conversation.
+                    </p>
+                )}
             </CardContent>
             <CardFooter className="border-t p-4 sm:p-6">
                 <form onSubmit={submitMessage} className="flex w-full gap-2">
