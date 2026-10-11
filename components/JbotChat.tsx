@@ -5,6 +5,7 @@ import { FormEvent, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import MarkdownMessage from '@/components/markdown-message'
 
 type ChatMessage = {
     id: string
@@ -121,7 +122,7 @@ export default function JbotChat({ conversationId, initialMessages }: JbotChatPr
                                     : 'bg-muted text-foreground'
                             }`}
                         >
-                            {item.content}
+                            {item.role === 'assistant' ? <MarkdownMessage content={item.content} /> : item.content}
                         </div>
                     </div>
                 ))}
