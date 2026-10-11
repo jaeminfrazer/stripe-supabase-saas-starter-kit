@@ -56,6 +56,13 @@ export async function POST(request: Request) {
       console.error('Assessment save failed:', saveError.message)
       return NextResponse.json({ error: 'Could not save assessment' }, { status: 500 })
     }
+    const { error: historyError } = await admin.from('jbot_stage_assessment_history').insert({
+      user_id: user.id, milestone_number: 4, status, assessment,
+    })
+    if (historyError) {
+      console.error('Assessment history save failed:', historyError.message)
+      return NextResponse.json({ error: 'Could not save assessment history' }, { status: 500 })
+    }
     return NextResponse.json({ status, assessment })
   } catch (error) {
     console.error('Assessment error:', error)
