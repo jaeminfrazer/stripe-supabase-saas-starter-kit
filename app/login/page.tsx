@@ -11,6 +11,7 @@ export default function Login() {
             <div className="relative z-10 grid w-full max-w-5xl overflow-hidden border border-black/10 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.10)] md:grid-cols-[1fr_420px]">
                 <section className="hidden flex-col justify-between bg-[#111111] p-10 text-white md:flex lg:p-14">
                     <div>
+                        <Image src="/1.png" alt="The Insecurity Project" width={1200} height={500} priority className="mb-10 h-auto w-full object-contain object-left" />
                         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-white/55">The Insecurity Project</p>
                         <h1 className="mt-20 max-w-lg text-5xl font-semibold leading-[1.05] tracking-[-0.04em] lg:text-6xl">Jbot<span className="text-white/45">.</span></h1>
                         <p className="mt-7 max-w-md text-lg leading-8 text-white/80">AI trained to understand the precise structure of personal insecurity and human aliveness.</p>
