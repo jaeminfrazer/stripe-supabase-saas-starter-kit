@@ -23,7 +23,7 @@ export default async function DashboardPage() {
 
     const intakeFields = ['tell_me_about_you', 'hindrances', 'personality', 'pain_points', 'goals', 'what_have_you_tried', 'history'] as const
     const onboardingComplete = Boolean(intake && intakeFields.every(field => typeof intake[field] === 'string' && intake[field].trim().length > 0))
-    const assessmentStatuses = Object.fromEntries((assessments ?? []).map(item => [item.milestone_number, item.status as string]))
+    const assessmentStatuses: Record<number, string> = Object.fromEntries((assessments ?? []).map(item => [item.milestone_number, item.status as string]))
 
     return (
         <main className="min-h-screen bg-muted/30 px-4 py-8 sm:px-6 lg:px-8">
