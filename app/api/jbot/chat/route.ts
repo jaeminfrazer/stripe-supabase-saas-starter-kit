@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { hasJbotAccess } from '@/utils/access/has-jbot-access'
 
 type StoredMessage = {
     id: string
@@ -172,6 +173,13 @@ export async function POST(request: Request) {
             return NextResponse.json(
                 { error: 'You must be signed in to use Jbot.' },
                 { status: 401 }
+            )
+        }
+
+        if (!(await hasJbotAccess(user.id, user.email ?? ''))) {
+            return NextResponse.json(
+                { error: 'Your J-Bot access has expired. Please renew your subscription or contact us for help.' },
+                { status: 403 }
             )
         }
 
