@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { hasJbotAccess } from '@/utils/access/has-jbot-access'
 
 export async function POST(request: Request) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!(await hasJbotAccess(user.id, user.email ?? ''))) return NextResponse.json({ error: 'Your J-Bot access has expired. Please renew your subscription or contact us for help.' }, { status: 403 })
   let body: { resourceId?: string }
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400 }) }
   if (typeof body.resourceId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.resourceId)) {
@@ -21,6 +23,7 @@ export async function DELETE(request: Request) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!(await hasJbotAccess(user.id, user.email ?? ''))) return NextResponse.json({ error: 'Your J-Bot access has expired. Please renew your subscription or contact us for help.' }, { status: 403 })
   let body: { resourceId?: string }
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400 }) }
   if (typeof body.resourceId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.resourceId)) {
