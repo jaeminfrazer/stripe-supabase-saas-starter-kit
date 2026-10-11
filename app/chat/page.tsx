@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 import JbotChat from '@/components/JbotChat'
 import { createClient } from '@/utils/supabase/server'
@@ -18,7 +19,6 @@ export default async function ChatPage() {
         redirect('/login')
     }
 
-    // Check whether the user has completed the intake form.
     const { data: intake, error: intakeError } = await supabase
         .from('jbot_onboarding_data')
         .select('user_id')
@@ -76,14 +76,16 @@ export default async function ChatPage() {
     }
 
     return (
-        <main className="min-h-screen bg-muted/30 px-4 py-8 sm:px-6 lg:px-8">
-            <div className="mx-auto flex max-w-4xl flex-col">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold tracking-tight">Jbot</h1>
-                    <p className="mt-2 text-muted-foreground">
-                        Your personal coaching assistant.
-                    </p>
-                </div>
+        <main className="min-h-screen bg-[#f4f2ee] px-4 py-8 text-[#111111] sm:px-6 lg:px-8">
+            <div className="mx-auto flex max-w-5xl flex-col">
+                <header className="mb-6 flex flex-col justify-between gap-5 border-b border-black/10 pb-6 sm:flex-row sm:items-end">
+                    <div>
+                        <Link href="/dashboard" className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500 hover:text-black">Jbot · Your journey</Link>
+                        <h1 className="mt-5 text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">Jbot<span className="text-neutral-400">.</span></h1>
+                        <p className="mt-4 max-w-2xl text-base leading-7 text-neutral-600">AI trained to understand the precise structure of personal insecurity and human aliveness.</p>
+                    </div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">Jaemin Frazer · The Insecurity Project</p>
+                </header>
                 <JbotChat
                     conversationId={conversationId}
                     initialMessages={(messages ?? []) as ChatMessage[]}
