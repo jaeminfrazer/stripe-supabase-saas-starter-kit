@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { createClient } from "@/utils/supabase/server"
 
 const categories = [
@@ -35,6 +36,21 @@ export default async function ResourcesPage() {
         console.error("Error loading resources:", error)
     }
 
+    const bonusResources =
+        resources?.filter((resource) =>
+            resource.tags?.some(
+                (tag: string) => tag.toLowerCase() === "bonus"
+            )
+        ) ?? []
+
+    const standardResources =
+        resources?.filter(
+            (resource) =>
+                !resource.tags?.some(
+                    (tag: string) => tag.toLowerCase() === "bonus"
+                )
+        ) ?? []
+
     return (
         <main className="min-h-screen bg-background">
             <div className="container max-w-screen-xl px-6 py-12">
@@ -56,11 +72,11 @@ export default async function ResourcesPage() {
                 <div className="space-y-16">
                     {categories.map((category) => {
                         const categoryResources =
-                            resources?.filter(
+                            standardResources.filter(
                                 (resource) =>
                                     resource.category?.toUpperCase() ===
                                     category.key
-                            ) ?? []
+                            )
 
                         return (
                             <section key={category.key}>
@@ -81,9 +97,10 @@ export default async function ResourcesPage() {
                                 ) : (
                                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                         {categoryResources.map((resource) => (
-                                            <div
+                                            <Link
                                                 key={resource.id}
-                                                className="rounded-xl border bg-card p-6"
+                                                href={`/resources/${resource.id}`}
+                                                className="block rounded-xl border bg-card p-6 transition-colors hover:bg-muted/50"
                                             >
                                                 <h3 className="text-lg font-semibold">
                                                     {resource.title}
@@ -91,18 +108,66 @@ export default async function ResourcesPage() {
 
                                                 {resource.description && (
                                                     <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                                                        {
-                                                            resource.description
-                                                        }
+                                                        {resource.description}
                                                     </p>
                                                 )}
-                                            </div>
+
+                                                <p className="mt-4 text-sm font-medium">
+                                                    View resource →
+                                                </p>
+                                            </Link>
                                         ))}
                                     </div>
                                 )}
                             </section>
                         )
                     })}
+
+                    <section>
+                        <div className="mb-6">
+                            <p className="mb-2 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                                Extra material
+                            </p>
+                            <h2 className="text-2xl font-semibold">
+                                Bonus Resources
+                            </h2>
+                            <p className="mt-2 max-w-2xl text-muted-foreground">
+                                Further reading and material to explore beyond
+                                the milestone sequence.
+                            </p>
+                        </div>
+
+                        {bonusResources.length === 0 ? (
+                            <div className="rounded-xl border border-dashed p-8 text-sm text-muted-foreground">
+                                Bonus resources coming soon.
+                            </div>
+                        ) : (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {bonusResources.map((resource) => (
+                                    <Link
+                                        key={resource.id}
+                                        href={`/resources/${resource.id}`}
+                                        className="block rounded-xl border bg-card p-6 transition-colors hover:bg-muted/50"
+                                    >
+                                        <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                            Bonus resource
+                                        </p>
+                                        <h3 className="text-lg font-semibold">
+                                            {resource.title}
+                                        </h3>
+                                        {resource.description && (
+                                            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                                                {resource.description}
+                                            </p>
+                                        )}
+                                        <p className="mt-4 text-sm font-medium">
+                                            Open resource →
+                                        </p>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </section>
                 </div>
             </div>
         </main>
