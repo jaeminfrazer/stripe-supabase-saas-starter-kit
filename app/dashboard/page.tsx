@@ -80,6 +80,12 @@ export default async function DashboardPage() {
                         <Link href="/chat" className="mt-6 inline-flex h-11 items-center bg-black px-5 text-sm font-medium text-white transition hover:bg-neutral-800">Continue with Jbot ↗</Link>
                     </section>
                     <section className="border border-black/10 bg-white p-6 sm:p-8">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">Work with Jaemin</p>
+                        <h2 className="mt-3 text-xl font-semibold">Book a private call with Jaemin</h2>
+                        <p className="mt-3 text-sm leading-6 text-neutral-600">Book a one-to-one session to explore what you’re working through in a personal conversation.</p>
+                        <a href="https://calendly.com/jaeminfrazer/personal-coaching-session" target="_blank" rel="noreferrer" className="mt-6 inline-flex h-11 items-center border border-black/20 px-5 text-sm font-medium transition hover:bg-neutral-100">Book a private call ↗</a>
+                    </section>
+                    <section className="border border-black/10 bg-white p-6 sm:p-8 md:col-span-2">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">This week</p>
                         <h2 className="mt-3 text-xl font-semibold">Group coaching</h2>
                         <p className="mt-3 text-sm leading-6 text-neutral-600">Join the weekly group coaching call and bring whatever you are working through.</p>
