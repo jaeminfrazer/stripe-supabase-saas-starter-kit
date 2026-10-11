@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from 'next/link'
-import Image from 'next/image'
 import SignupForm from "@/components/SignupForm"
 import ProviderSigninBlock from "@/components/ProviderSigninBlock"
 
@@ -11,6 +10,7 @@ export default function Signup() {
             <div className="relative z-10 grid w-full max-w-5xl overflow-hidden border border-black/10 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.10)] md:grid-cols-[1fr_420px]">
                 <section className="hidden flex-col justify-between bg-[#111111] p-10 text-white md:flex lg:p-14">
                     <div>
+                        <img src="/1.png" alt="The Insecurity Project" className="mb-10 h-auto w-full object-contain object-left" />
                         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-white/55">The Insecurity Project</p>
                         <h1 className="mt-20 text-5xl font-semibold leading-[1.05] tracking-[-0.04em] lg:text-6xl">Jbot<span className="text-white/45">.</span></h1>
                         <p className="mt-7 max-w-md text-lg leading-8 text-white/80">AI trained to understand the precise structure of personal insecurity and human aliveness.</p>
@@ -20,7 +20,7 @@ export default function Signup() {
                 <Card className="w-full rounded-none border-0 bg-white shadow-none">
                     <CardHeader className="space-y-3 px-7 pt-10 sm:px-10">
                         <Link href="/" className="inline-flex w-fit items-center gap-3">
-                            <Image src="/logo.png" alt="Jbot" width={34} height={34} className="object-contain" />
+                            <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center bg-[#111111] text-[11px] font-semibold tracking-[-0.04em] text-white">Jbot</span>
                             <span className="text-lg font-semibold tracking-[0.18em]">JBOT</span>
                         </Link>
                         <div className="pt-7">
