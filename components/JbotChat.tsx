@@ -65,31 +65,35 @@ export default function JbotChat({ conversationId, initialMessages }: JbotChatPr
                 result.assistantMessage,
             ])
 
-            // Run assessment and show its outcome, rather than silently dropping HTTP failures.
-            void (async () => {
+            // Assess only when Jbot signals a natural checkpoint. Ordinary turns do not
+            // incur an assessment call. The marker itself is stripped server-side.
+            const milestonesToAssess: number[] = Array.isArray(result.assessmentMilestones)
+                ? result.assessmentMilestones.filter((value: unknown): value is number => [4, 5, 7].includes(Number(value)))
+                : []
+            if (milestonesToAssess.length > 0) {
                 setAssessmentStatus('checking')
                 setAssessmentError('')
-                try {
-                const assessmentResponse = await fetch('/api/jbot/assessment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ conversationId }),
-                })
-                const assessmentResult = await assessmentResponse.json().catch(() => ({}))
-                if (!assessmentResponse.ok) {
-                    const detail = assessmentResult.error || `Assessment request failed (HTTP ${assessmentResponse.status}).`
-                    console.error('[jbot-assessment] request failed', { status: assessmentResponse.status, error: detail })
-                    setAssessmentError(detail)
-                    setAssessmentStatus('failed')
-                } else {
-                    setAssessmentStatus('saved')
-                }
-                } catch (assessmentRequestError) {
-                    console.error('[jbot-assessment] network request failed', assessmentRequestError)
-                    setAssessmentError('Could not reach the assessment service. Your chat message was saved.')
-                    setAssessmentStatus('failed')
-                }
-            })()
+                void (async () => {
+                    try {
+                        for (const milestoneNumber of milestonesToAssess) {
+                            const assessmentResponse = await fetch('/api/jbot/assessment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ conversationId, milestoneNumber }),
+                            })
+                            const assessmentResult = await assessmentResponse.json().catch(() => ({}))
+                            if (!assessmentResponse.ok) {
+                                throw new Error(assessmentResult.error || 'Milestone ' + milestoneNumber + ' assessment failed (HTTP ' + assessmentResponse.status + ').')
+                            }
+                        }
+                        setAssessmentStatus('saved')
+                    } catch (assessmentRequestError) {
+                        console.error('[jbot-assessment] request failed', assessmentRequestError)
+                        setAssessmentError(assessmentRequestError instanceof Error ? assessmentRequestError.message : 'Assessment unavailable.')
+                        setAssessmentStatus('failed')
+                    }
+                })()
+            }
         } catch (submissionError) {
             setMessages((current) => current.filter((item) => item.id !== optimisticMessage.id))
             setError(submissionError instanceof Error ? submissionError.message : 'Unable to send your message.')
