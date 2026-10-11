@@ -63,14 +63,27 @@ export default function JbotChat({ conversationId, initialMessages }: JbotChatPr
             ])
 
             // Run the provisional assessment against the saved conversation.
-            // A failed assessment must never interrupt the coaching chat.
-            void fetch('/api/jbot/assessment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ conversationId }),
-            }).catch((assessmentError) => {
-                console.error('Jbot assessment request failed:', assessmentError)
-            })
+            // Keep coaching responsive, but make HTTP failures visible in logs.
+            void (async () => {
+                try {
+                    const assessmentResponse = await fetch('/api/jbot/assessment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ conversationId }),
+                    })
+                    if (!assessmentResponse.ok) {
+                        const result = await assessmentResponse.json().catch(() => ({}))
+                        console.error('[jbot-assessment] request failed', {
+                            status: assessmentResponse.status,
+                            error: result.error || 'Unknown assessment error',
+                        })
+                    } else {
+                        console.info('[jbot-assessment] request completed', assessmentResponse.status)
+                    }
+                } catch (assessmentError) {
+                    console.error('[jbot-assessment] network request failed', assessmentError)
+                }
+            })()
         } catch (submissionError) {
             setMessages((current) => current.filter((item) => item.id !== optimisticMessage.id))
             setError(submissionError instanceof Error ? submissionError.message : 'Unable to send your message.')
