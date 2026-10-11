@@ -1,161 +1,108 @@
-import { Button } from "@/components/ui/button"
 import Image from "next/image"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import Link from "next/link"
-import { Star, Check, Coins, UserCheck, Database } from "lucide-react"
 import StripePricingTable from "@/components/StripePricingTable"
 
-export default async function LandingPage() {
+export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-[100dvh]">
-      <header className="px-4 lg:px-6 h-16 flex items-center  bg-white border-b fixed border-b-slate-200 w-full">
-        <Link className="flex items-center justify-center" href="#">
-          <Image src="/logo.png" alt="logo" width={50} height={50} />
-          <span className="sr-only">Acme Inc</span>
-        </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
-          <a className="text-sm font-medium hover:underline underline-offset-4" href="#features">
-            Features
-          </a>
-          <a className="text-sm font-medium hover:underline underline-offset-4" href="#testimonials">
-            Testimonials
-          </a>
-          <a className="text-sm font-medium hover:underline underline-offset-4" href="#pricing">
-            Pricing
-          </a>
-        </nav>
-        <Button className="mx-2 md:mx-4 lg:mx-6 xl:mx-10" >
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/login">
-            Get Started
+    <main className="min-h-screen bg-[#f4f2ee] text-[#111111]">
+      <header className="sticky top-0 z-50 border-b border-black/10 bg-[#f4f2ee]/95 backdrop-blur">
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8">
+          <Link href="/" className="flex items-center gap-3" aria-label="Jbot home">
+            <span className="flex h-10 w-10 items-center justify-center bg-black text-xs font-semibold text-white">Jbot</span>
+            <span className="text-xl font-semibold tracking-[-0.06em]">Jbot<span className="text-neutral-400">.</span></span>
+            <span className="hidden border-l border-black/15 pl-3 text-[10px] font-semibold uppercase leading-4 tracking-[0.18em] text-neutral-500 sm:block">The Insecurity<br />Project</span>
           </Link>
-        </Button>
+          <nav className="flex items-center gap-4 sm:gap-7">
+            <a className="hidden text-sm text-neutral-600 transition hover:text-black sm:inline" href="#about">What Jbot does</a>
+            <a className="hidden text-sm text-neutral-600 transition hover:text-black sm:inline" href="#approach">The approach</a>
+            <a className="hidden text-sm text-neutral-600 transition hover:text-black sm:inline" href="#pricing">Pricing</a>
+            <Link className="bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" href="/login">Get started <span aria-hidden="true">↗</span></Link>
+          </nav>
+        </div>
       </header>
-      <main className="flex-1">
-        <section className="w-full py-20 lg:py-32 xl:py-40">
-          <div className="container px-4 md:px-6 flex flex-col md:flex-row ">
-            <div className="flex flex-col space-y-4 md:w-1/2 w-full ">
-              <div className="space-y-2">
-                <h1 className="text-2xl  tracking-tighter sm:text-3xl md:text-4xl lg:text-5xl/none">
-                  Saas Template with Supabase, Stripe, Databases
-                </h1>
-                <p className=" text-muted-foreground md:text-xl">
-                  NextJS Boilerplate with everything required to build your next SAAS Product
-                </p>
-              </div>
-              <div className="space-x-4">
-                <Button>Get Started</Button>
-                <Button variant="outline">Learn More</Button>
-              </div>
+
+      <section className="relative overflow-hidden bg-[#111111] text-white">
+        <div aria-hidden="true" className="absolute -right-24 -top-24 h-[30rem] w-[30rem] rounded-full border border-white/10 sm:right-12 sm:top-10" />
+        <div aria-hidden="true" className="absolute -right-8 top-0 h-72 w-72 rounded-full border border-white/10 sm:right-28 sm:top-24" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 sm:px-10 sm:py-28 lg:grid-cols-[1.1fr_0.9fr] lg:px-14 lg:py-32">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">The Insecurity Project · By Jaemin Frazer</p>
+            <h1 className="mt-8 text-5xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-7xl">Understand the structure of insecurity.</h1>
+            <p className="mt-8 max-w-2xl text-lg leading-8 text-white/75 sm:text-xl sm:leading-9">AI trained to understand the precise structure of personal insecurity and human aliveness.</p>
+            <div className="mt-10 flex flex-wrap gap-3">
+              <Link href="/signup" className="inline-flex h-12 items-center bg-white px-6 text-sm font-semibold text-black transition hover:bg-neutral-200">Start with Jbot <span aria-hidden="true" className="ml-3">↗</span></Link>
+              <Link href="/login" className="inline-flex h-12 items-center border border-white/30 px-6 text-sm font-semibold text-white transition hover:bg-white/10">Sign in</Link>
             </div>
-            <div className="w-full md:w-1/2  flex justify-center">
-              <Image src="/hero.png" alt="Hero" width={500} height={500} priority />
-            </div>
+            <p className="mt-10 text-xs leading-6 text-white/45">A personal experience built around the work of Jaemin Frazer.</p>
           </div>
-        </section>
-        <section className="w-full py-10 md:py-20 lg:py-32 bg-muted" id="features">
-          <div className="container px-4 md:px-6">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center mb-4">Our Features</h2>
-            <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3">
-              <div className="flex flex-col items-center space-y-2 border-muted-foreground/10 p-4 rounded-lg">
-                <div className="p-2 bg-primary/10 rounded-full">
-                  <Coins className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold">Payments</h3>
-                <p className="text-muted-foreground text-center">Seamlesly integrate Stripe Billing to capture subscription payments - Webhooks and all</p>
-              </div>
-              <div className="flex flex-col items-center space-y-2 border-muted-foreground/10 p-4 rounded-lg">
-                <div className="p-2 bg-primary/10 rounded-full">
-                  <UserCheck className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold">Auth</h3>
-                <p className="text-muted-foreground text-center">Utilize our preexisting Superbase integration to auth your users and secure your app </p>
-              </div>
-              <div className="flex flex-col items-center space-y-2 border-muted-foreground/10 p-4 rounded-lg">
-                <div className="p-2 bg-primary/10 rounded-full">
-                  <Database className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold">Database</h3>
-                <p className="text-muted-foreground text-center">Hook into any PostgresDB instance</p>
-              </div>
+          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+            <div className="absolute -inset-4 border border-white/10" />
+            <Image src="/31-Jaemin_Frazer-44.jpg" alt="Jaemin Frazer" width={700} height={900} priority className="relative aspect-[4/5] w-full object-cover object-top grayscale" />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/65">Jaemin Frazer</p>
+              <p className="mt-2 text-2xl font-medium tracking-tight">The Insecurity Project</p>
             </div>
           </div>
-        </section>
-        <section className="w-full py-10 md:py-20 lg:py-32" id="testimonials">
-          <div className="container px-4 md:px-6">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center mb-4">What Our Customers Say</h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-1 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mb-2">&quot;This product has revolutionized our workflow. Highly recommended!&quot;</p>
-                  <p className="font-semibold">- Sarah J., CEO</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-1 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mb-2">&quot;Wow everything is already integrated! Less time configuring, more time building!.&quot;</p>
-                  <p className="font-semibold">- Mark T., CTO</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-1 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mb-2">&quot;We&aposve seen a 200% increase in productivity since implementing this solution.&quot;</p>
-                  <p className="font-semibold">- Emily R., Operations Manager</p>
-                </CardContent>
-              </Card>
-            </div>
+        </div>
+      </section>
+
+      <section id="about" className="mx-auto max-w-7xl px-6 py-20 sm:px-10 sm:py-28 lg:px-14">
+        <div className="grid gap-8 md:grid-cols-[0.7fr_1.3fr] md:gap-16">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">The work</p>
+            <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-4xl">Not another generic AI conversation.</h2>
           </div>
-        </section>
-        <section className="w-full py-10 md:py-20 lg:py-32 bg-muted" id="pricing">
-          <div className="container px-4 md:px-6">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center mb-4">Pricing Plans</h2>
-            <p className="text-muted-foreground text-center mb-8 md:text-xl">Choose the perfect plan for your needs</p>
-            <StripePricingTable />
+          <div className="max-w-3xl">
+            <p className="text-lg leading-8 text-neutral-700">Jbot is designed around a specific way of understanding personal insecurity: the structures, stories and strategies that shape how we see ourselves and move through the world.</p>
+            <p className="mt-5 text-lg leading-8 text-neutral-700">The intention isn’t to give you a stream of generic advice. It is to help you examine what is happening with greater precision, so you can recognise the patterns at work and discover what becomes possible beyond them.</p>
           </div>
-        </section>
-        <section className="w-full py-10 md:py-20 lg:py-32 ">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Start Your Journey Today</h2>
-                <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                  Join thousands of satisfied customers and take your business to the next level.
-                </p>
-              </div>
-              <div className="w-full max-w-sm space-y-2">
-                <Link className="btn" href="#">
-                  <Button className=" p-7" >Get Started</Button>
-                </Link>
-              </div>
-            </div>
+        </div>
+      </section>
+
+      <section id="approach" className="border-y border-black/10 bg-[#eae7e1]">
+        <div className="mx-auto max-w-7xl px-6 py-20 sm:px-10 sm:py-24 lg:px-14">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Three ideas at the centre</p>
+          <div className="mt-10 grid gap-px border border-black/10 bg-black/10 md:grid-cols-3">
+            <article className="bg-[#eae7e1] p-7 sm:p-9">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">01</p>
+              <h3 className="mt-8 text-2xl font-semibold tracking-tight">Understand the structure</h3>
+              <p className="mt-4 text-sm leading-7 text-neutral-700">Look beyond the surface reaction to the assumptions, agreements and strategies underneath it.</p>
+            </article>
+            <article className="bg-[#eae7e1] p-7 sm:p-9">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">02</p>
+              <h3 className="mt-8 text-2xl font-semibold tracking-tight">Explore without judgement</h3>
+              <p className="mt-4 text-sm leading-7 text-neutral-700">Bring a real situation and examine it carefully, without reducing yourself to a label or diagnosis.</p>
+            </article>
+            <article className="bg-[#eae7e1] p-7 sm:p-9">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">03</p>
+              <h3 className="mt-8 text-2xl font-semibold tracking-tight">Make room for aliveness</h3>
+              <p className="mt-4 text-sm leading-7 text-neutral-700">Notice what becomes available when the old rules about who you must be are open to question.</p>
+            </article>
           </div>
-        </section>
-      </main>
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-muted-foreground">© 2024 Acme Inc. All rights reserved.</p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Terms of Service
-          </Link>
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Privacy
-          </Link>
-        </nav>
+        </div>
+      </section>
+
+      <section id="pricing" className="mx-auto max-w-7xl px-6 py-20 sm:px-10 sm:py-28 lg:px-14">
+        <div className="mb-10 max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Access Jbot</p>
+          <h2 className="mt-4 text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">Begin where you are.</h2>
+          <p className="mt-5 text-base leading-7 text-neutral-600">Choose the access option that fits you. You can return to your conversations and journey from your personal dashboard.</p>
+        </div>
+        <StripePricingTable />
+      </section>
+
+      <footer className="border-t border-black/10 bg-[#111111] text-white">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-10 lg:px-14">
+          <div>
+            <p className="text-lg font-semibold tracking-tight">Jbot<span className="text-white/45">.</span></p>
+            <p className="mt-1 text-xs text-white/55">By Jaemin Frazer · The Insecurity Project</p>
+          </div>
+          <div className="flex gap-5 text-sm text-white/65">
+            <Link href="/login" className="hover:text-white">Sign in</Link>
+            <Link href="/signup" className="hover:text-white">Create an account</Link>
+          </div>
+        </div>
       </footer>
-    </div>
+    </main>
   )
 }
