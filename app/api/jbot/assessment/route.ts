@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { hasJbotAccess } from '@/utils/access/has-jbot-access'
 import { createAdminClient } from '@/utils/supabase/admin'
 
 const assessmentInstructions: Record<number, string> = {
@@ -44,6 +45,9 @@ export async function POST(request: Request) {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!(await hasJbotAccess(user.id, user.email ?? ''))) {
+    return NextResponse.json({ error: 'Your J-Bot access has expired. Please renew your subscription or contact us for help.' }, { status: 403 })
+  }
 
   let body: { conversationId?: string; milestoneNumber?: number }
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400 }) }

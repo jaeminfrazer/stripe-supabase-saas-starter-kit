@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { hasJbotAccess } from '@/utils/access/has-jbot-access'
 
 export async function POST(request: Request) {
     const supabase = createClient()
@@ -7,6 +8,9 @@ export async function POST(request: Request) {
 
     if (!user) {
         return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    }
+    if (!(await hasJbotAccess(user.id, user.email ?? ''))) {
+        return NextResponse.json({ error: 'Your J-Bot access has expired. Please renew your subscription or contact us for help.' }, { status: 403 })
     }
 
     let body: { milestoneNumber?: number }
@@ -43,6 +47,9 @@ export async function DELETE(request: Request) {
 
     if (!user) {
         return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    }
+    if (!(await hasJbotAccess(user.id, user.email ?? ''))) {
+        return NextResponse.json({ error: 'Your J-Bot access has expired. Please renew your subscription or contact us for help.' }, { status: 403 })
     }
 
     let body: { milestoneNumber?: number }
