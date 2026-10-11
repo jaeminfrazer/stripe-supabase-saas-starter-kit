@@ -285,47 +285,65 @@ export default function IntakePage() {
                         </p>
                     </div>
 
-                    <label className="flex items-start gap-3 rounded-md border p-4 text-sm leading-6">
-                        <input
-                            type="checkbox"
-                            checked={firstCoachingExperience}
-                            onChange={(event) => {
-                                setFirstCoachingExperience(event.target.checked)
-                                setError("")
-                            }}
-                            className="mt-1 h-4 w-4 shrink-0"
-                        />
-                        <span>
-                            Yes — this is my first coaching experience with Jaemin.
-                        </span>
-                    </label>
-
-                    <div className="space-y-3">
-                        <label htmlFor="coaching-journey" className="block text-sm font-medium">
-                            If you have worked with Jaemin before, please describe your coaching journey so far.
+                    <fieldset className="space-y-3">
+                        <legend className="sr-only">Is this your first coaching experience with Jaemin?</legend>
+                        <label className="flex items-start gap-3 rounded-md border p-4 text-sm leading-6">
+                            <input
+                                type="radio"
+                                name="first-coaching-experience"
+                                checked={firstCoachingExperience}
+                                onChange={() => {
+                                    setFirstCoachingExperience(true)
+                                    setError("")
+                                }}
+                                className="mt-1 h-4 w-4 shrink-0"
+                            />
+                            <span>
+                                Yes — this is my first coaching experience with Jaemin.
+                            </span>
                         </label>
-                        <p className="text-sm leading-6 text-muted-foreground">
-                            What have been your key breakthroughs, insights and milestones in personal growth? What has changed in how you see yourself or live your life?
-                        </p>
-                        <p className="text-sm leading-6 text-muted-foreground">
-                            Where do you feel you are currently up to? What have you integrated into your life, what remains unresolved, and where do you feel stuck or find yourself returning to old patterns?
-                        </p>
-                        <textarea
-                            id="coaching-journey"
-                            value={coachingJourney}
-                            onChange={(event) => {
-                                setCoachingJourney(event.target.value)
-                                setError("")
-                            }}
-                            rows={7}
-                            required={!firstCoachingExperience}
-                            className="flex w-full rounded-md border border-input bg-background px-3 py-3 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                            placeholder="Your coaching journey, breakthroughs and where you are now..."
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            If this is your first coaching experience with Jaemin, you can leave this field blank.
-                        </p>
-                    </div>
+                        <label className="flex items-start gap-3 rounded-md border p-4 text-sm leading-6">
+                            <input
+                                type="radio"
+                                name="first-coaching-experience"
+                                checked={!firstCoachingExperience}
+                                onChange={() => {
+                                    setFirstCoachingExperience(false)
+                                    setError("")
+                                }}
+                                className="mt-1 h-4 w-4 shrink-0"
+                            />
+                            <span>
+                                No — I have worked with Jaemin before.
+                            </span>
+                        </label>
+                    </fieldset>
+
+                    {!firstCoachingExperience && (
+                        <div className="space-y-3">
+                            <label htmlFor="coaching-journey" className="block text-sm font-medium">
+                                Please describe your coaching journey so far.
+                            </label>
+                            <p className="text-sm leading-6 text-muted-foreground">
+                                What have been your key breakthroughs, insights and milestones in personal growth? What has changed in how you see yourself or live your life?
+                            </p>
+                            <p className="text-sm leading-6 text-muted-foreground">
+                                Where do you feel you are currently up to? What have you integrated into your life, what remains unresolved, and where do you feel stuck or find yourself returning to old patterns?
+                            </p>
+                            <textarea
+                                id="coaching-journey"
+                                value={coachingJourney}
+                                onChange={(event) => {
+                                    setCoachingJourney(event.target.value)
+                                    setError("")
+                                }}
+                                rows={7}
+                                required
+                                className="flex w-full rounded-md border border-input bg-background px-3 py-3 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                placeholder="Your coaching journey, breakthroughs and where you are now..."
+                            />
+                        </div>
+                    )}
                 </section>
 
                 {error && (
