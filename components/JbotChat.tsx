@@ -65,9 +65,10 @@ export default function JbotChat({ conversationId, initialMessages }: JbotChatPr
             ])
 
             // Run assessment and show its outcome, rather than silently dropping HTTP failures.
-            setAssessmentStatus('checking')
-            setAssessmentError('')
-            try {
+            void (async () => {
+                setAssessmentStatus('checking')
+                setAssessmentError('')
+                try {
                 const assessmentResponse = await fetch('/api/jbot/assessment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -82,11 +83,12 @@ export default function JbotChat({ conversationId, initialMessages }: JbotChatPr
                 } else {
                     setAssessmentStatus('saved')
                 }
-            } catch (assessmentRequestError) {
-                console.error('[jbot-assessment] network request failed', assessmentRequestError)
-                setAssessmentError('Could not reach the assessment service. Your chat message was saved.')
-                setAssessmentStatus('failed')
-            }
+                } catch (assessmentRequestError) {
+                    console.error('[jbot-assessment] network request failed', assessmentRequestError)
+                    setAssessmentError('Could not reach the assessment service. Your chat message was saved.')
+                    setAssessmentStatus('failed')
+                }
+            })()
         } catch (submissionError) {
             setMessages((current) => current.filter((item) => item.id !== optimisticMessage.id))
             setError(submissionError instanceof Error ? submissionError.message : 'Unable to send your message.')
