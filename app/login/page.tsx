@@ -20,7 +20,7 @@ export default function Login() {
                 <Card className="w-full rounded-none border-0 bg-white shadow-none">
                     <CardHeader className="space-y-3 px-7 pt-10 sm:px-10">
                         <Link href="/" className="inline-flex w-fit items-center gap-3">
-                            <Image src="/logo.png" alt="Jbot" width={34} height={34} className="object-contain" />
+                            <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center bg-[#111111] text-[11px] font-semibold tracking-[-0.04em] text-white">Jbot</span>
                             <span className="text-lg font-semibold tracking-[0.18em]">JBOT</span>
                         </Link>
                         <div className="pt-7">
