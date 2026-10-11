@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import JourneyProgress from '@/components/journey-progress'
 import ResourceCompletion from '@/components/resource-completion'
 import { createClient } from '@/utils/supabase/server'
@@ -30,6 +31,7 @@ export default async function DashboardPage() {
                 <section className="relative overflow-hidden bg-[#111111] px-7 py-10 text-white sm:px-10 sm:py-14 lg:px-14">
                     <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full border border-white/10" />
                     <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 h-48 w-48 rounded-full border border-white/10" />
+                    <Image src="/31-Jaemin_Frazer-44.jpg" alt="Jaemin Frazer" width={420} height={560} className="absolute right-0 top-0 hidden h-full max-h-[420px] w-auto object-cover object-top opacity-80 lg:block" />
                     <div className="relative max-w-3xl">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/50">The Insecurity Project · A personal experience with Jbot</p>
                         <h1 className="mt-8 text-4xl font-semibold tracking-[-0.045em] sm:text-5xl lg:text-6xl">Welcome, {firstName}.</h1>
