@@ -1,118 +1,55 @@
-'use client'
-
-import { useState } from 'react'
-
 const milestones = [
-    'Introducing yourself to Jbot',
-    'See the game',
-    'See the structure of insecurity',
-    'Identify the accusation',
-    'Discover the defining moment',
-    "Understand the system's purpose",
-    'Well-formed outcomes',
-    'Become ready',
-    'See beyond the category',
-    'Reclaim sovereignty',
-    'Restore full trust and permission',
-    'Live in aliveness and play',
+  'Introducing yourself to Jbot',
+  'See the game',
+  'See the structure of insecurity',
+  'Identify the accusation',
+  'Discover the defining moment',
+  "Understand the system's purpose",
+  'Well-formed outcomes',
+  'Become ready',
+  'See beyond the category',
+  'Reclaim sovereignty',
+  'Restore full trust and permission',
+  'Live in aliveness and play',
 ]
 
-type JourneyProgressProps = {
-    completedMilestones: number[]
-}
+type Props = { onboardingComplete: boolean; assessmentStatus: string }
 
-export default function JourneyProgress({
-    completedMilestones,
-}: JourneyProgressProps) {
-    const [completed, setCompleted] = useState<number[]>(completedMilestones)
-    const [saving, setSaving] = useState<number | null>(null)
-    const [error, setError] = useState('')
+export default function JourneyProgress({ onboardingComplete, assessmentStatus }: Props) {
+  const complete = new Set<number>()
+  if (onboardingComplete) complete.add(1)
+  if (assessmentStatus === 'complete') complete.add(4)
+  const count = complete.size
 
-    async function toggleMilestone(number: number) {
-        const wasCompleted = completed.includes(number)
-        setSaving(number)
-        setError('')
-
-        try {
-            const response = await fetch('/api/journey-progress', {
-                method: wasCompleted ? 'DELETE' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ milestoneNumber: number }),
-            })
-
-            if (!response.ok) {
-                throw new Error('Progress could not be saved. Please try again.')
-            }
-
-            setCompleted((current) =>
-                wasCompleted
-                    ? current.filter((item) => item !== number)
-                    : [...current, number].sort((a, b) => a - b)
-            )
-        } catch (e) {
-            setError(e instanceof Error ? e.message : 'Progress could not be saved.')
-        } finally {
-            setSaving(null)
-        }
-    }
-
-    const count = completed.length
-    const current = milestones.findIndex((_, index) => !completed.includes(index + 1))
-
-    return (
-        <section className="rounded-xl border bg-background p-6 shadow-sm sm:p-8">
-            <div className="mb-6">
-                <h2 className="text-xl font-semibold">Your Journey</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                    Your progress through The Unhindered Experience.
-                </p>
-                <div className="mt-5">
-                    <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="font-medium">Progress</span>
-                        <span className="text-muted-foreground">{count} of {milestones.length} complete</span>
-                    </div>
-                    <div
-                        className="h-2 overflow-hidden rounded-full bg-muted"
-                        role="progressbar"
-                        aria-label="Journey completion"
-                        aria-valuemin={0}
-                        aria-valuemax={milestones.length}
-                        aria-valuenow={count}
-                    >
-                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(count / milestones.length) * 100}%` }} />
-                    </div>
-                </div>
-            </div>
-
-            <ol className="space-y-3">
-                {milestones.map((milestone, index) => {
-                    const number = index + 1
-                    const isComplete = completed.includes(number)
-                    const isCurrent = !isComplete && number === current + 1
-                    return (
-                        <li key={milestone} className="flex items-center gap-3 rounded-lg border border-transparent p-2 sm:gap-4">
-                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm ${isComplete ? 'border-primary bg-primary text-primary-foreground' : isCurrent ? 'border-primary text-primary' : 'text-muted-foreground'}`}>
-                                {isComplete ? '✓' : number}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <p className={`font-medium ${isComplete ? 'text-muted-foreground' : ''}`}>{milestone}</p>
-                                {isCurrent && <p className="mt-0.5 text-sm text-muted-foreground">Your current focus</p>}
-                                {isComplete && <p className="mt-0.5 text-sm text-muted-foreground">Complete</p>}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => toggleMilestone(number)}
-                                disabled={saving !== null}
-                                aria-pressed={isComplete}
-                                className="shrink-0 rounded-md border px-3 py-2 text-xs font-medium transition-colors hover:bg-muted disabled:opacity-50 sm:text-sm"
-                            >
-                                {saving === number ? 'Saving…' : isComplete ? 'Undo' : 'Mark complete'}
-                            </button>
-                        </li>
-                    )
-                })}
-            </ol>
-            {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
-        </section>
-    )
+  return <section className="rounded-xl border bg-background p-6 shadow-sm sm:p-8">
+    <div className="mb-6">
+      <h2 className="text-xl font-semibold">Your Journey</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Resource completion and milestone resolution are tracked separately.</p>
+      <div className="mt-5">
+        <div className="mb-2 flex items-center justify-between text-sm">
+          <span className="font-medium">Milestones resolved</span>
+          <span className="text-muted-foreground">{count} of 12</span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Milestones resolved" aria-valuemin={0} aria-valuemax={12} aria-valuenow={count}>
+          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(count / 12) * 100}%` }} />
+        </div>
+      </div>
+    </div>
+    <ol className="space-y-3">
+      {milestones.map((milestone, index) => {
+        const number = index + 1
+        const done = complete.has(number)
+        const assessing = number === 4 && assessmentStatus === 'investigating'
+        return <li key={milestone} className="flex items-center gap-3 rounded-lg border p-3 sm:gap-4">
+          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm ${done ? 'border-primary bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>{done ? '✓' : number}</div>
+          <div className="min-w-0 flex-1">
+            <p className={`font-medium ${done ? 'text-muted-foreground' : ''}`}>{milestone}</p>
+            {number === 1 && <p className="mt-1 text-xs text-muted-foreground">Complete when all seven onboarding answers have been provided.</p>}
+            {number === 4 && <p className="mt-1 text-xs text-muted-foreground">Prototype assessment: Jbot tests the original accusation against behaviour and evidence from the defining moment.</p>}
+          </div>
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${done ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>{done ? 'Complete' : assessing ? 'Assessing' : 'Pending'}</span>
+        </li>
+      })}
+    </ol>
+  </section>
 }
