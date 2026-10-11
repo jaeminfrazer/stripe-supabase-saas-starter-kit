@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 type Resource = { id: string; title: string; category: string | null; description: string | null; tags: string[] | null }
 
@@ -34,7 +35,7 @@ export default function ResourceCompletion({ resources, completedIds }: { resour
       return <div key={resource.id} className="flex items-start gap-3 rounded-lg border p-4">
         <input aria-label={`Mark ${resource.title} completed`} type="checkbox" checked={done} disabled={saving !== null} onChange={() => toggle(resource.id)} className="mt-1 h-4 w-4" />
         <div className="min-w-0 flex-1">
-          <p className={`font-medium ${done ? 'text-muted-foreground line-through' : ''}`}>{resource.title}</p>
+          <Link href={`/resources/${resource.id}`} className={`font-medium underline-offset-4 hover:underline ${done ? 'text-muted-foreground line-through' : ''}`}>{resource.title}</Link>
           {resource.description && <p className="mt-1 text-sm text-muted-foreground">{resource.description}</p>}
           {resource.tags?.length ? <p className="mt-2 text-xs text-muted-foreground">{resource.tags.filter(tag => /milestone/i.test(tag)).join(' · ')}</p> : null}
         </div>
