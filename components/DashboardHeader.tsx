@@ -1,89 +1,20 @@
-import { Menu, Search } from "lucide-react"
 import Link from "next/link"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import Image from "next/image"
 import DashboardHeaderProfileDropdown from "./DashboardHeaderProfileDropdown"
 
 export default function DashboardHeader() {
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-14 max-w-screen-2xl items-center">
-                <div className="mr-4 hidden md:flex">
-                    <Link className="mr-2 flex items-center space-x-2" href="">
-                        <Image
-                            src="/logo.png"
-                            alt="logo"
-                            width={25}
-                            height={25}
-                        />
-                    </Link>
-
-                    <nav className="flex items-center space-x-6 text-sm font-medium">
-                        <Link
-                            className="transition-colors hover:text-foreground/80 text-foreground"
-                            href="#"
-                        >
-                            Home
-                        </Link>
-
-                        <Link
-                            className="transition-colors hover:text-foreground/80 text-foreground/60"
-                            href="#"
-                        >
-                            Projects
-                        </Link>
-
-                        <Link
-                            className="transition-colors hover:text-foreground/80 text-foreground/60"
-                            href="#"
-                        >
-                            Tasks
-                        </Link>
-
-                        <Link
-                            className="transition-colors hover:text-foreground/80 text-foreground/60"
-                            href="#"
-                        >
-                            Reports
-                        </Link>
-
-                        <Link
-                            className="transition-colors hover:text-foreground/80 text-foreground"
-                            href="/chat"
-                        >
-                            Jbot Chat
-                        </Link>
-                    </nav>
-                </div>
-
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className="mr-2 md:hidden"
-                >
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle Menu</span>
-                </Button>
-
-                <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-                    <div className="w-full flex-1 md:w-auto md:flex-none">
-                        <form>
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-
-                                <Input
-                                    type="search"
-                                    placeholder="Search..."
-                                    className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-                                />
-                            </div>
-                        </form>
-                    </div>
-
+        <header className="sticky top-0 z-50 w-full border-b border-black/10 bg-[#f8f7f4]/95 backdrop-blur supports-[backdrop-filter]:bg-[#f8f7f4]/80">
+            <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8">
+                <Link href="/dashboard" className="group flex items-center gap-3" aria-label="Jbot home">
+                    <span className="text-2xl font-semibold tracking-[-0.06em] text-[#111111]">Jbot<span className="text-neutral-400">.</span></span>
+                    <span className="hidden h-7 border-l border-black/15 sm:block" />
+                    <span className="hidden text-[10px] font-semibold uppercase leading-4 tracking-[0.18em] text-neutral-500 sm:block">The Insecurity<br />Project</span>
+                </Link>
+                <nav className="flex items-center gap-3 sm:gap-6">
+                    <Link className="hidden text-sm font-medium text-neutral-600 transition hover:text-black sm:inline-flex" href="/dashboard">Your journey</Link>
+                    <Link className="inline-flex items-center border border-black bg-black px-4 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-800" href="/chat">Open Jbot <span aria-hidden="true" className="ml-2">↗</span></Link>
                     <DashboardHeaderProfileDropdown />
-                </div>
+                </nav>
             </div>
         </header>
     )
