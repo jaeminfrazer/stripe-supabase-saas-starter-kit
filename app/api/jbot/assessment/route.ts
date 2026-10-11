@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
 
 const instructions = `You are Jbot's provisional assessment engine for the accusation milestone. Assess evidence, not client self-rating and not keyword matches alone.
 
@@ -46,7 +47,9 @@ export async function POST(request: Request) {
     if (typeof raw !== 'string') return NextResponse.json({ error: 'Assessment returned no result' }, { status: 502 })
     const assessment = JSON.parse(raw)
     const status = ['pending', 'investigating', 'complete'].includes(assessment.status) ? assessment.status : 'investigating'
-    const { error: saveError } = await supabase.from('jbot_stage_assessments').upsert({
+    // Only this trusted server endpoint may write assessment results.
+    const admin = createAdminClient()
+    const { error: saveError } = await admin.from('jbot_stage_assessments').upsert({
       user_id: user.id, milestone_number: 4, status, assessment, updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,milestone_number' })
     if (saveError) {
