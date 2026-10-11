@@ -75,6 +75,8 @@ export default function IntakePage() {
     const router = useRouter()
 
     const [form, setForm] = useState<IntakeData>(emptyForm)
+    const [firstCoachingExperience, setFirstCoachingExperience] = useState(false)
+    const [coachingJourney, setCoachingJourney] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState("")
@@ -120,6 +122,24 @@ export default function IntakePage() {
                 })
             }
 
+            const { data: journey, error: journeyError } = await supabase
+                .from("jbot_coaching_journey")
+                .select("first_coaching_experience, coaching_journey")
+                .eq("user_id", user.id)
+                .maybeSingle()
+
+            if (journeyError) {
+                console.error("Could not load coaching journey:", journeyError)
+                setError("We could not load your coaching history. Please try again.")
+                setIsLoading(false)
+                return
+            }
+
+            if (journey) {
+                setFirstCoachingExperience(journey.first_coaching_experience)
+                setCoachingJourney(journey.coaching_journey ?? "")
+            }
+
             setIsLoading(false)
         }
 
@@ -136,6 +156,11 @@ export default function IntakePage() {
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
+
+        if (!firstCoachingExperience && !coachingJourney.trim()) {
+            setError("Please describe your coaching journey, or tick the box if this is your first coaching experience with Jaemin.")
+            return
+        }
 
         setIsSaving(true)
         setError("")
@@ -166,6 +191,27 @@ export default function IntakePage() {
 
         if (saveError) {
             setError("We could not save your intake. Please try again.")
+            setIsSaving(false)
+            return
+        }
+
+        const { error: journeySaveError } = await supabase
+            .from("jbot_coaching_journey")
+            .upsert(
+                {
+                    user_id: user.id,
+                    first_coaching_experience: firstCoachingExperience,
+                    coaching_journey: coachingJourney.trim() || null,
+                    updated_at: new Date().toISOString(),
+                },
+                {
+                    onConflict: "user_id",
+                }
+            )
+
+        if (journeySaveError) {
+            console.error("Could not save coaching journey:", journeySaveError)
+            setError("Your intake was saved, but we could not save your coaching history. Please try again.")
             setIsSaving(false)
             return
         }
@@ -228,6 +274,59 @@ export default function IntakePage() {
                         />
                     </section>
                 ))}
+
+                <section className="space-y-4 border-t pt-8">
+                    <div className="space-y-2">
+                        <h2 className="text-xl font-semibold">
+                            8. Your Coaching Journey
+                        </h2>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                            Is this your first coaching experience with Jaemin?
+                        </p>
+                    </div>
+
+                    <label className="flex items-start gap-3 rounded-md border p-4 text-sm leading-6">
+                        <input
+                            type="checkbox"
+                            checked={firstCoachingExperience}
+                            onChange={(event) => {
+                                setFirstCoachingExperience(event.target.checked)
+                                setError("")
+                            }}
+                            className="mt-1 h-4 w-4 shrink-0"
+                        />
+                        <span>
+                            Yes — this is my first coaching experience with Jaemin.
+                        </span>
+                    </label>
+
+                    <div className="space-y-3">
+                        <label htmlFor="coaching-journey" className="block text-sm font-medium">
+                            If you have worked with Jaemin before, please describe your coaching journey so far.
+                        </label>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                            What have been your key breakthroughs, insights and milestones in personal growth? What has changed in how you see yourself or live your life?
+                        </p>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                            Where do you feel you are currently up to? What have you integrated into your life, what remains unresolved, and where do you feel stuck or find yourself returning to old patterns?
+                        </p>
+                        <textarea
+                            id="coaching-journey"
+                            value={coachingJourney}
+                            onChange={(event) => {
+                                setCoachingJourney(event.target.value)
+                                setError("")
+                            }}
+                            rows={7}
+                            required={!firstCoachingExperience}
+                            className="flex w-full rounded-md border border-input bg-background px-3 py-3 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                            placeholder="Your coaching journey, breakthroughs and where you are now..."
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            If this is your first coaching experience with Jaemin, you can leave this field blank.
+                        </p>
+                    </div>
+                </section>
 
                 {error && (
                     <p className="text-sm text-destructive">
