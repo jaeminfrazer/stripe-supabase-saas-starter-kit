@@ -429,11 +429,11 @@ You may include more than one marker only if each milestone independently reache
             )
         }
 
-        const assessmentMilestones = [...rawAssistantContent.matchAll(/\\[\\[JBOT_ASSESS:(4|5|7)\\]\\]/g)]
+        const assessmentMilestones = [...rawAssistantContent.matchAll(/\[\[JBOT_ASSESS:(4|5|7)\]\]/g)]
             .map((match) => Number(match[1]))
             .filter((milestone, index, all) => all.indexOf(milestone) === index)
         const assistantContent = rawAssistantContent
-            .replace(/\\n?\\[\\[JBOT_ASSESS:(?:4|5|7)\\]\\]/g, '')
+            .replace(/\n?\[\[JBOT_ASSESS:(?:4|5|7)\]\]/g, '')
             .trim()
 
         const {
