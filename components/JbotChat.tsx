@@ -143,7 +143,7 @@ export default function JbotChat({ conversationId, initialMessages }: JbotChatPr
                 )}
                 {assessmentStatus === 'failed' && (
                     <p className="text-sm text-destructive" role="alert">
-                        Journey assessment couldn't be updated: {assessmentError} Your chat is still available; this hasn't interrupted your conversation.
+                        Journey assessment couldn&apos;t be updated: {assessmentError} Your chat is still available; this hasn&apos;t interrupted your conversation.
                     </p>
                 )}
             </CardContent>
