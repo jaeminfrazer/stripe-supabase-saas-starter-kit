@@ -4,7 +4,7 @@ import { createAdminClient } from '@/utils/supabase/admin'
 
 const instructions = `You are Jbot's provisional assessment engine for the accusation milestone. Assess evidence, not client self-rating and not keyword matches alone.
 
-Seven core accusations: morality (bad), intelligence (stupid), value (worthless), capacity (weak), appearance (ugly/disgusting), normality (weird), status (loser). The core fear is that the world will confirm the person's worst childhood accusation of inadequacy.
+Seven core accusations: morality (bad), intelligence (stupid), value (worthless), capacity (weak), appearance (ugly/disgusting), normality (weird), status (loser). The core fear is that the world will confirm the person's worst childhood accusation of inadequacy. This endpoint assesses milestone 4, Identify the accusation. Milestone 5, Discover the defining moment, is separate and must not be marked complete by this assessment.
 
 Behaviour is evidence. Ask what the person would need to believe about themselves for their behaviour to make sense. Test in both directions: forward, does the accusation explain their strategies and behaviour? backward, does observed behaviour point back to that accusation? A person may have several accusations; seek the earliest/original accusation, not just the most frequently mentioned one.
 
@@ -13,7 +13,7 @@ Investigate the proposed defining moment. It must be before age 7 (most likely b
 Return JSON only with this shape:
 {"status":"pending|investigating|complete","candidate_accusations":[{"category":"morality|intelligence|value|capacity|appearance|normality|status","label":"bad|stupid|worthless|weak|ugly/disgusting|weird|loser","evidence":"..."}],"original_accusation":null,"defining_moment":{"reported_details":null,"reported_age":null,"surprise_evidence":null,"embarrassment_evidence":null,"innocuousness_evidence":null},"forward_test":{"result":"supports|contradicts|unclear","reasoning":"..."},"backward_test":{"result":"supports|contradicts|unclear","reasoning":"..."},"supporting_evidence":[],"counter_evidence":[],"unknowns":[],"confidence":"low|moderate|high","client_facing_summary":"..."}
 
-Set status complete ONLY if there is specific client-reported evidence for a single best-supported original accusation AND a specific defining moment with credible timing before age 7, evidence of surprise and embarrassment, a plausible connection to that accusation, and both forward and backward tests support the same accusation. Counter-evidence and unknowns must not undermine the conclusion. Otherwise use investigating when substantive evidence exists, or pending when it does not. Do not claim scientific validation. When uncertain, do not complete.`
+Set status complete ONLY if there is specific client-reported evidence for a single best-supported original accusation AND both forward and backward behavioural tests support the same accusation, with counter-evidence and unknowns not undermining the conclusion. A defining moment is useful supporting evidence, but do NOT require a defining moment to complete milestone 4; that is a separate milestone. Do not mark milestone 5 complete here. Otherwise use investigating when substantive evidence exists, or pending when it does not. Do not claim scientific validation. When uncertain, do not complete.`
 
 export async function POST(request: Request) {
   const supabase = createClient()
