@@ -5,8 +5,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SAAS Starter Kit",
-  description: "SAAS Starter Kit with Stripe, Supabase, Postgres",
+  title: "Jbot — The Insecurity Project",
+  description:
+    "AI trained to understand the precise structure of personal insecurity and human aliveness. By Jaemin Frazer, The Insecurity Project.",
 };
 
 export default function RootLayout({
