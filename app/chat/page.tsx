@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 import JbotChat from '@/components/JbotChat'
 import { createClient } from '@/utils/supabase/server'
