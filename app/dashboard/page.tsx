@@ -41,21 +41,6 @@ export default async function DashboardPage() {
                     </div>
                 </section>
 
-                <section className="grid gap-4 md:grid-cols-2">
-                    <div className="border border-black/10 bg-white p-6 sm:p-8">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">Continue</p>
-                        <h2 className="mt-3 text-xl font-semibold">Work with Jbot</h2>
-                        <p className="mt-3 text-sm leading-6 text-neutral-600">Bring a real situation, question or pattern you want to understand more clearly.</p>
-                        <Link href="/chat" className="mt-6 inline-flex h-11 items-center bg-black px-5 text-sm font-medium text-white transition hover:bg-neutral-800">Continue with Jbot ↗</Link>
-                    </div>
-                    <div className="border border-black/10 bg-white p-6 sm:p-8">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">Work with Jaemin</p>
-                        <h2 className="mt-3 text-xl font-semibold">Book a personal session</h2>
-                        <p className="mt-3 text-sm leading-6 text-neutral-600">Sometimes you may want to take something further in a one-to-one session with Jaemin.</p>
-                        <a href="https://calendly.com/jaeminfrazer/personal-coaching-session" target="_blank" rel="noreferrer" className="mt-6 inline-flex h-11 items-center border border-black/20 px-5 text-sm font-medium transition hover:bg-neutral-100">Book a session ↗</a>
-                    </div>
-                </section>
-
                 <section className="border-b border-black/10 pb-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">Your workspace</p>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight">Your journey</h2>
@@ -74,6 +59,21 @@ export default async function DashboardPage() {
                 </section>
 
                 <JourneyProgress onboardingComplete={onboardingComplete} assessmentStatuses={assessmentStatuses} />
+
+                <section className="grid gap-4 md:grid-cols-2">
+                    <div className="border border-black/10 bg-white p-6 sm:p-8">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">Continue</p>
+                        <h2 className="mt-3 text-xl font-semibold">Work with Jbot</h2>
+                        <p className="mt-3 text-sm leading-6 text-neutral-600">Bring a real situation, question or pattern you want to understand more clearly.</p>
+                        <Link href="/chat" className="mt-6 inline-flex h-11 items-center bg-black px-5 text-sm font-medium text-white transition hover:bg-neutral-800">Continue with Jbot ↗</Link>
+                    </div>
+                    <div className="border border-black/10 bg-white p-6 sm:p-8">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">Work with Jaemin</p>
+                        <h2 className="mt-3 text-xl font-semibold">Book a personal session</h2>
+                        <p className="mt-3 text-sm leading-6 text-neutral-600">Sometimes you may want to take something further in a one-to-one session with Jaemin.</p>
+                        <a href="https://calendly.com/jaeminfrazer/personal-coaching-session" target="_blank" rel="noreferrer" className="mt-6 inline-flex h-11 items-center border border-black/20 px-5 text-sm font-medium transition hover:bg-neutral-100">Book a session ↗</a>
+                    </div>
+                </section>
 
                 <section className="border border-black/10 bg-white p-5 sm:p-7">
                     <div className="mb-5">
