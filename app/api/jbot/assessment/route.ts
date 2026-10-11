@@ -16,17 +16,38 @@ Return JSON only with this shape:
 Set status complete ONLY if there is specific client-reported evidence for a single best-supported original accusation AND both forward and backward behavioural tests support the same accusation, with counter-evidence and unknowns not undermining the conclusion. A defining moment is useful supporting evidence, but do NOT require a defining moment to complete milestone 4; that is a separate milestone. Do not mark milestone 5 complete here. Otherwise use investigating when substantive evidence exists, or pending when it does not. Do not claim scientific validation. When uncertain, do not complete.`
 
 export async function POST(request: Request) {
+  console.info('[jbot-assessment] request received')
+  console.info('[jbot-assessment] configuration present', {
+    openAiKey: Boolean(process.env.OPENAI_API_KEY),
+    supabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    adminKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+  })
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (authError || !user) {
+    console.warn('[jbot-assessment] authentication failed', { hasUser: Boolean(user), hasAuthError: Boolean(authError) })
+    return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  }
+  console.info('[jbot-assessment] authenticated')
   let body: { conversationId?: string }
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400 }) }
-  if (typeof body.conversationId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.conversationId)) return NextResponse.json({ error: 'Invalid conversation' }, { status: 400 })
+  if (typeof body.conversationId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.conversationId)) {
+    console.warn('[jbot-assessment] invalid conversation id')
+    return NextResponse.json({ error: 'Invalid conversation' }, { status: 400 })
+  }
 
-  const { data: conversation } = await supabase.from('jbot_conversations').select('id').eq('id', body.conversationId).eq('user_id', user.id).maybeSingle()
-  if (!conversation) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
+  const { data: conversation, error: conversationError } = await supabase.from('jbot_conversations').select('id').eq('id', body.conversationId).eq('user_id', user.id).maybeSingle()
+  if (conversationError || !conversation) {
+    console.warn('[jbot-assessment] conversation lookup failed', { hasError: Boolean(conversationError), foundConversation: Boolean(conversation) })
+    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
+  }
+  console.info('[jbot-assessment] conversation verified')
   const { data: messages, error: messageError } = await supabase.from('jbot_messages').select('role,content').eq('conversation_id', conversation.id).order('created_at', { ascending: true })
-  if (messageError) return NextResponse.json({ error: 'Could not load conversation' }, { status: 500 })
+  if (messageError) {
+    console.error('[jbot-assessment] message query failed', messageError.message)
+    return NextResponse.json({ error: 'Could not load conversation' }, { status: 500 })
+  }
+  console.info('[jbot-assessment] messages loaded', { count: messages?.length ?? 0 })
   const { data: intake } = await supabase.from('jbot_onboarding_data').select('tell_me_about_you,hindrances,personality,pain_points,goals,what_have_you_tried,history').eq('user_id', user.id).maybeSingle()
 
   try {
@@ -42,6 +63,7 @@ export async function POST(request: Request) {
       console.error('Assessment model request failed:', await response.text())
       return NextResponse.json({ error: 'Assessment unavailable' }, { status: 502 })
     }
+    console.info('[jbot-assessment] model response received')
     const result = await response.json()
     const raw = result.choices?.[0]?.message?.content
     if (typeof raw !== 'string') return NextResponse.json({ error: 'Assessment returned no result' }, { status: 502 })
@@ -49,6 +71,7 @@ export async function POST(request: Request) {
     const status = ['pending', 'investigating', 'complete'].includes(assessment.status) ? assessment.status : 'investigating'
     // Only this trusted server endpoint may write assessment results.
     const admin = createAdminClient()
+    console.info('[jbot-assessment] saving assessment', { status })
     const { error: saveError } = await admin.from('jbot_stage_assessments').upsert({
       user_id: user.id, milestone_number: 4, status, assessment, updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,milestone_number' })
@@ -63,9 +86,10 @@ export async function POST(request: Request) {
       console.error('Assessment history save failed:', historyError.message)
       return NextResponse.json({ error: 'Could not save assessment history' }, { status: 500 })
     }
+    console.info('[jbot-assessment] assessment saved successfully')
     return NextResponse.json({ status, assessment })
   } catch (error) {
-    console.error('Assessment error:', error)
+    console.error('[jbot-assessment] unhandled assessment error:', error)
     return NextResponse.json({ error: 'Assessment failed' }, { status: 502 })
   }
 }
