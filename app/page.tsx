@@ -106,7 +106,7 @@ export default function LandingPage() {
           <h2 className="mt-4 text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">Begin where you are.</h2>
           <p className="mt-5 text-base leading-7 text-neutral-600">Choose the access option that fits you. You can return to your conversations and journey from your personal dashboard.</p>
         </div>
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+        <div className="max-w-2xl">
           <div className="border border-black/10 bg-white p-6 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Monthly access</p>
             <h3 className="mt-4 text-2xl font-semibold tracking-tight">Jbot subscription</h3>
@@ -116,17 +116,6 @@ export default function LandingPage() {
               <span className="text-sm text-neutral-500">per month</span>
             </div>
             <div className="mt-8"><StripePricingTable /></div>
-          </div>
-          <div className="flex flex-col border border-black/10 bg-[#111111] p-6 text-white sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">Limited beta offer</p>
-            <h3 className="mt-4 text-2xl font-semibold tracking-tight">Jbot six-month unhindered experience</h3>
-            <p className="mt-3 text-sm leading-6 text-white/70">A one-time payment for six months of access as part of the beta test.</p>
-            <div className="mt-8 flex items-baseline gap-2">
-              <span className="text-4xl font-semibold tracking-tight">A$995</span>
-              <span className="text-sm text-white/55">once · six months</span>
-            </div>
-            <p className="mt-4 text-xs leading-5 text-white/50">Beta access is offered through a private checkout link.</p>
-            <a href="https://buy.stripe.com/cNi14n8aW8ML00c1r72oE0v" className="mt-auto inline-flex h-12 items-center justify-center bg-white px-6 text-sm font-semibold text-black transition hover:bg-neutral-200">Get beta access <span aria-hidden="true" className="ml-3">↗</span></a>
           </div>
         </div>
       </section>
