@@ -187,7 +187,37 @@ export async function loginUser(currentState: { message: string }, formData: For
     }
 
     revalidatePath('/', 'layout')
-    redirect('/dashboard')
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        redirect('/login')
+    }
+
+    const { data: intake, error: intakeError } = await supabase
+        .from('jbot_onboarding_data')
+        .select('tell_me_about_you,hindrances,personality,pain_points,goals,what_have_you_tried,history')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+    if (intakeError) {
+        return { message: 'Signed in, but we could not check your intake. Please try again.' }
+    }
+
+    const intakeFields = ['tell_me_about_you', 'hindrances', 'personality', 'pain_points', 'goals', 'what_have_you_tried', 'history'] as const
+    const intakeComplete = Boolean(intake && intakeFields.every(field => typeof intake[field] === 'string' && intake[field].trim().length > 0))
+
+    const { data: journey, error: journeyError } = await supabase
+        .from('jbot_coaching_journey')
+        .select('first_coaching_experience,coaching_journey')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+    if (journeyError) {
+        return { message: 'Signed in, but we could not check your coaching history. Please try again.' }
+    }
+
+    const journeyComplete = Boolean(journey && (journey.first_coaching_experience || journey.coaching_journey?.trim()))
+    redirect(intakeComplete && journeyComplete ? '/dashboard' : '/intake')
 }
 
 export async function logout() {
