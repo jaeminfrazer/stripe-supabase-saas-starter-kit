@@ -23,6 +23,14 @@ export default async function DashboardPage() {
 
     const intakeFields = ['tell_me_about_you', 'hindrances', 'personality', 'pain_points', 'goals', 'what_have_you_tried', 'history'] as const
     const onboardingComplete = Boolean(intake && intakeFields.every(field => typeof intake[field] === 'string' && intake[field].trim().length > 0))
+    const { data: coachingJourney } = user
+        ? await supabase.from('jbot_coaching_journey').select('first_coaching_experience,coaching_journey').eq('user_id', user.id).maybeSingle()
+        : { data: null }
+    const coachingJourneyComplete = Boolean(coachingJourney && (coachingJourney.first_coaching_experience || coachingJourney.coaching_journey?.trim()))
+    if (user && (!onboardingComplete || !coachingJourneyComplete)) {
+        const { redirect } = await import('next/navigation')
+        redirect('/intake')
+    }
     const assessmentStatuses: Record<number, string> = Object.fromEntries((assessments ?? []).map(item => [item.milestone_number, item.status as string]))
 
     return (
@@ -36,7 +44,7 @@ export default async function DashboardPage() {
                         <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/50">The Insecurity Project · A personal experience with Jbot</p>
                         <h1 className="mt-8 text-4xl font-semibold tracking-[-0.045em] sm:text-5xl lg:text-6xl">Welcome, {firstName}.</h1>
                         <p className="mt-6 max-w-2xl text-base leading-7 text-white/75 sm:text-lg sm:leading-8">AI trained to understand the precise structure of personal insecurity and human aliveness.</p>
-                        <Link href="/chat" className="mt-8 inline-flex h-12 items-center bg-white px-6 text-sm font-semibold text-black transition hover:bg-neutral-200">Start a conversation <span aria-hidden="true" className="ml-3">↗</span></Link>
+                        <Link href={onboardingComplete && coachingJourneyComplete ? "/chat" : "/intake"} className="mt-8 inline-flex h-12 items-center bg-white px-6 text-sm font-semibold text-black transition hover:bg-neutral-200">{onboardingComplete && coachingJourneyComplete ? "Start a conversation" : "Complete your intake"} <span aria-hidden="true" className="ml-3">↗</span></Link>
                         <p className="mt-8 text-[10px] font-medium uppercase tracking-[0.24em] text-white/40">Created by Jaemin Frazer</p>
                     </div>
                 </section>
@@ -77,7 +85,7 @@ export default async function DashboardPage() {
                         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">Continue</p>
                         <h2 className="mt-3 text-xl font-semibold">Work with Jbot</h2>
                         <p className="mt-3 text-sm leading-6 text-neutral-600">Bring a real situation, question or pattern you want to understand more clearly.</p>
-                        <Link href="/chat" className="mt-6 inline-flex h-11 items-center bg-black px-5 text-sm font-medium text-white transition hover:bg-neutral-800">Continue with Jbot ↗</Link>
+                        <Link href={onboardingComplete && coachingJourneyComplete ? "/chat" : "/intake"} className="mt-6 inline-flex h-11 items-center bg-black px-5 text-sm font-medium text-white transition hover:bg-neutral-800">{onboardingComplete && coachingJourneyComplete ? "Continue with Jbot ↗" : "Complete your intake ↗"}</Link>
                     </section>
                     <section className="border border-black/10 bg-white p-6 sm:p-8">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">Work with Jaemin</p>
