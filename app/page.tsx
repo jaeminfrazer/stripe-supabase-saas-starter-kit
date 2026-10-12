@@ -82,6 +82,24 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section id="map" className="border-y border-black/10 bg-[#f4f2ee]">
+        <div className="mx-auto max-w-7xl px-6 py-20 sm:px-10 sm:py-24 lg:px-14">
+          <div className="mb-10 grid gap-6 md:grid-cols-[0.8fr_1.2fr] md:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">The architecture</p>
+              <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-[-0.045em] sm:text-5xl">J-BOT: A Map for Aliveness.</h2>
+            </div>
+            <p className="max-w-2xl text-base leading-7 text-neutral-600">The map behind Jbot: its posture, conversational method, language model and approach to assessing progress. Explore the structure that informs the conversation.</p>
+          </div>
+          <a href="/J-BOT_%20A%20Map%20for%20Aliveness.png" target="_blank" rel="noreferrer" aria-label="Open the full J-BOT Map for Aliveness in a new tab" className="group block border border-black/10 bg-white p-2 transition hover:border-black/30 sm:p-4">
+            <Image src="/J-BOT_%20A%20Map%20for%20Aliveness.png" alt="J-BOT: A Map for Aliveness — overview of the purpose, posture, eight-step conversational method, language model, assessment engine and resource system." width={1536} height={2048} className="h-auto w-full object-contain" sizes="(max-width: 1280px) 100vw, 1280px" />
+            <span className="flex items-center justify-between gap-4 px-3 py-4 text-sm font-medium text-neutral-600 transition group-hover:text-black sm:px-4">
+              <span>Open full-size map</span><span aria-hidden="true">↗</span>
+            </span>
+          </a>
+        </div>
+      </section>
+
       <section id="pricing" className="mx-auto max-w-7xl px-6 py-20 sm:px-10 sm:py-28 lg:px-14">
         <div className="mb-10 max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Access Jbot</p>
