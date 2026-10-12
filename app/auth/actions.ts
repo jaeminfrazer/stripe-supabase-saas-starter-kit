@@ -61,6 +61,29 @@ export async function signup(currentState: { message: string }, formData: FormDa
         name: (formData.get('name') as string).trim(),
     }
 
+    // Beta signup must follow a successfully recorded A$995 beta payment.
+    const isBetaSignup = formData.get('beta_signup') === 'true'
+    if (isBetaSignup) {
+        const now = new Date()
+        const paidPurchases = await db.select()
+            .from(betaPurchases)
+            .where(
+                and(
+                    eq(betaPurchases.email, data.email),
+                    eq(betaPurchases.payment_status, 'paid'),
+                    isNull(betaPurchases.claimed_user_id),
+                    gt(betaPurchases.expires_at, now)
+                )
+            )
+            .limit(1)
+
+        if (paidPurchases.length === 0) {
+            return {
+                message: "We couldn't find a completed Jbot beta payment for this email. Please complete the beta checkout first, using this same email address, then return here."
+            }
+        }
+    }
+
     // Check if user exists in our database first
     const existingDBUser = await db.select()
         .from(usersTable)
