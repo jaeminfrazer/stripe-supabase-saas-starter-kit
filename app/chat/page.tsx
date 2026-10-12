@@ -21,7 +21,7 @@ export default async function ChatPage() {
 
     const { data: intake, error: intakeError } = await supabase
         .from('jbot_onboarding_data')
-        .select('user_id')
+        .select('tell_me_about_you,hindrances,personality,pain_points,goals,what_have_you_tried,history')
         .eq('user_id', user.id)
         .maybeSingle()
 
@@ -29,7 +29,21 @@ export default async function ChatPage() {
         throw new Error('Unable to load your intake status.')
     }
 
-    if (!intake) {
+    const intakeFields = ['tell_me_about_you', 'hindrances', 'personality', 'pain_points', 'goals', 'what_have_you_tried', 'history'] as const
+    const intakeComplete = Boolean(intake && intakeFields.every(field => typeof intake[field] === 'string' && intake[field].trim().length > 0))
+
+    const { data: journey, error: journeyError } = await supabase
+        .from('jbot_coaching_journey')
+        .select('first_coaching_experience,coaching_journey')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+    if (journeyError) {
+        throw new Error('Unable to load your coaching history.')
+    }
+
+    const journeyComplete = Boolean(journey && (journey.first_coaching_experience || journey.coaching_journey?.trim()))
+    if (!intakeComplete || !journeyComplete) {
         redirect('/intake')
     }
 
