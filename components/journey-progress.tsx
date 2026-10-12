@@ -49,6 +49,8 @@ export default function JourneyProgress({ onboardingComplete, assessmentStatuses
             <p className={`font-medium ${done ? 'text-muted-foreground' : ''}`}>{milestone}</p>
             {number === 1 && <p className="mt-1 text-xs text-muted-foreground">Complete when all seven onboarding answers have been provided.</p>}
             {number === 4 && <p className="mt-1 text-xs text-muted-foreground">Prototype assessment: Jbot tests the original accusation against behaviour and evidence from the defining moment.</p>}
+            {number === 5 && <p className="mt-1 text-xs text-muted-foreground">Assessment examines the early experience, the child’s interpretation, and whether the evidence connects coherently to the original accusation and proving/defending strategy.</p>}
+            {number === 7 && <p className="mt-1 text-xs text-muted-foreground">Assessment examines whether the desired outcome is clear, aligned with the client’s highest intention, supported by a considered vehicle, and ready to be acted upon.</p>}
           </div>
           <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${done ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>{done ? 'Complete' : assessing ? 'Investigating' : assessmentStatus === 'pending' ? 'Pending' : 'In progress'}</span>
         </li>
