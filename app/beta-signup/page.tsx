@@ -1,7 +1,6 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from 'next/link'
 import SignupForm from "@/components/SignupForm"
-import ProviderSigninBlock from "@/components/ProviderSigninBlock"
 
 export default function BetaSignup() {
     return (
@@ -31,11 +30,6 @@ export default function BetaSignup() {
                     </CardHeader>
                     <CardContent className="grid gap-5 px-7 sm:px-10">
                         <SignupForm betaSignup={true} />
-                        <div className="relative py-1">
-                            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-neutral-200" /></div>
-                            <div className="relative flex justify-center text-xs uppercase tracking-widest"><span className="bg-white px-3 text-neutral-400">Or continue with</span></div>
-                        </div>
-                        <ProviderSigninBlock />
                     </CardContent>
                     <CardFooter className="flex-col gap-4 px-7 pb-10 text-center sm:px-10">
                         <p className="text-sm text-neutral-500">Already have an account? <Link className="font-semibold text-black underline underline-offset-4" href="/login">Sign in</Link></p>
