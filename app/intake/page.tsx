@@ -157,6 +157,12 @@ export default function IntakePage() {
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
 
+        const unanswered = questions.filter(question => !form[question.key].trim())
+        if (unanswered.length > 0) {
+            setError("Please answer all seven intake questions before continuing.")
+            return
+        }
+
         if (!firstCoachingExperience && !coachingJourney.trim()) {
             setError("Please describe your coaching journey, or tick the box if this is your first coaching experience with Jaemin.")
             return
@@ -265,6 +271,7 @@ export default function IntakePage() {
 
                         <textarea
                             value={form[question.key]}
+                            required
                             onChange={(event) =>
                                 updateField(question.key, event.target.value)
                             }
