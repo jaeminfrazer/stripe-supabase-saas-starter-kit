@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label"
 import { useFormState, useFormStatus } from 'react-dom'
 import { signup } from '@/app/auth/actions'
 
-export default function SignupForm() {
+export default function SignupForm({ betaSignup = false }: { betaSignup?: boolean }) {
     const initialState = {
         message: ''
     }
@@ -15,6 +15,7 @@ export default function SignupForm() {
 
     return (
         <form action={formAction}>
+            {betaSignup && <input type="hidden" name="beta_signup" value="true" />}
             <div className="grid gap-2">
                 <Label htmlFor="name">Name</Label>
                 <Input
