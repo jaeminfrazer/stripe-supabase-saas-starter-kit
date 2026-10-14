@@ -72,7 +72,9 @@ ${intake.history ?? 'No answer provided.'}
 async function selectKnowledgeRecords(
     content: string,
     history: StoredMessage[],
-    records: KnowledgeMetadata[]
+    records: KnowledgeMetadata[],
+    conversationId: string,
+    turnNumber: number
 ): Promise<string[]> {
     if (!records.length) return []
 
@@ -94,6 +96,7 @@ async function selectKnowledgeRecords(
     }))
 
     try {
+        const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
         const response = await fetch(
             'https://api.openai.com/v1/chat/completions',
             {
@@ -103,7 +106,7 @@ async function selectKnowledgeRecords(
                     Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
                 },
                 body: JSON.stringify({
-                    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+                    model,
                     response_format: { type: 'json_object' },
                     messages: [
                         {
@@ -129,8 +132,13 @@ async function selectKnowledgeRecords(
         }
 
         const result = await response.json()
-        console.info('Jbot knowledge selector usage:', {
+        console.info('Jbot API usage:', {
+            callType: 'knowledge_selector',
+            conversationId,
+            turnNumber,
+            model,
             promptTokens: result.usage?.prompt_tokens ?? null,
+            cachedPromptTokens: result.usage?.prompt_tokens_details?.cached_tokens ?? null,
             completionTokens: result.usage?.completion_tokens ?? null,
             totalTokens: result.usage?.total_tokens ?? null,
         })
@@ -349,10 +357,13 @@ export async function POST(request: Request) {
             // Keep chat available if the optional knowledge library is unavailable.
             console.error('Unable to load Jbot knowledge metadata:', knowledgeMetadataError)
         } else {
+            const turnNumber = Math.ceil(((history ?? []) as StoredMessage[]).length / 2)
             const selectedIds = await selectKnowledgeRecords(
                 content,
                 (history ?? []) as StoredMessage[],
-                (knowledgeMetadata ?? []) as KnowledgeMetadata[]
+                (knowledgeMetadata ?? []) as KnowledgeMetadata[],
+                verifiedConversationId,
+                turnNumber
             )
 
             if (selectedIds.length) {
@@ -394,6 +405,8 @@ Do not trigger an assessment after every message. Continue coaching naturally. W
 You may include more than one marker only if each milestone independently reached a natural checkpoint. Never show, explain or refer to these markers to the client. Do not use a marker merely because the user mentions a milestone. The server removes markers before displaying or saving the response. The assessment engine, not you, decides the status.
 `
 
+        const coachingModel = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+        const turnNumber = Math.ceil(((history ?? []) as StoredMessage[]).length / 2)
         const openAIResponse = await fetch(
             'https://api.openai.com/v1/chat/completions',
             {
@@ -403,7 +416,7 @@ You may include more than one marker only if each milestone independently reache
                     Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
                 },
                 body: JSON.stringify({
-                    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+                    model: coachingModel,
                     messages: [
                         {
                             role: 'system',
@@ -444,8 +457,13 @@ You may include more than one marker only if each milestone independently reache
         }
 
         const completion = await openAIResponse.json()
-        console.info('Jbot coaching model usage:', {
+        console.info('Jbot API usage:', {
+            callType: 'coaching',
+            conversationId: verifiedConversationId,
+            turnNumber,
+            model: coachingModel,
             promptTokens: completion.usage?.prompt_tokens ?? null,
+            cachedPromptTokens: completion.usage?.prompt_tokens_details?.cached_tokens ?? null,
             completionTokens: completion.usage?.completion_tokens ?? null,
             totalTokens: completion.usage?.total_tokens ?? null,
         })
