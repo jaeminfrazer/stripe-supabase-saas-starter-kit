@@ -67,10 +67,12 @@ export async function POST(request: Request) {
   const { data: intake } = await supabase.from('jbot_onboarding_data').select('tell_me_about_you,hindrances,personality,pain_points,goals,what_have_you_tried,history').eq('user_id', user.id).maybeSingle()
 
   try {
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+    const turnNumber = Math.ceil((messages ?? []).length / 2)
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-      body: JSON.stringify({ model: process.env.OPENAI_MODEL || 'gpt-4o-mini', response_format: { type: 'json_object' }, messages: [
+      body: JSON.stringify({ model, response_format: { type: 'json_object' }, messages: [
         { role: 'system', content: assessmentInstructions[milestoneNumber] },
         { role: 'user', content: JSON.stringify({ intake: intake ?? {}, conversation: messages ?? [] }) },
       ] }),
@@ -80,6 +82,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Assessment unavailable' }, { status: 502 })
     }
     const result = await response.json()
+    console.info('Jbot API usage:', {
+      callType: 'assessment',
+      conversationId: conversation.id,
+      turnNumber,
+      milestoneNumber,
+      model,
+      promptTokens: result.usage?.prompt_tokens ?? null,
+      cachedPromptTokens: result.usage?.prompt_tokens_details?.cached_tokens ?? null,
+      completionTokens: result.usage?.completion_tokens ?? null,
+      totalTokens: result.usage?.total_tokens ?? null,
+    })
     const raw = result.choices?.[0]?.message?.content
     if (typeof raw !== 'string') return NextResponse.json({ error: 'Assessment returned no result' }, { status: 502 })
     const assessment = JSON.parse(raw)
