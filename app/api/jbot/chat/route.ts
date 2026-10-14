@@ -76,7 +76,19 @@ async function selectKnowledgeRecords(
 ): Promise<string[]> {
     if (!records.length) return []
 
-    const recentHistory = history.slice(-8).map((item) => ({
+    // The latest user message is already supplied separately below. It is also
+    // present in persisted history, so exclude that duplicate to avoid paying
+    // for the same text twice in the knowledge-selection request.
+    const historyWithoutDuplicateLatest = [...history]
+    const lastMessage = historyWithoutDuplicateLatest[historyWithoutDuplicateLatest.length - 1]
+    if (
+        lastMessage?.role === 'user' &&
+        lastMessage.content.trim() === content.trim()
+    ) {
+        historyWithoutDuplicateLatest.pop()
+    }
+
+    const recentHistory = historyWithoutDuplicateLatest.slice(-8).map((item) => ({
         role: item.role,
         content: item.content.slice(0, 1500),
     }))
@@ -117,6 +129,11 @@ async function selectKnowledgeRecords(
         }
 
         const result = await response.json()
+        console.info('Jbot knowledge selector usage:', {
+            promptTokens: result.usage?.prompt_tokens ?? null,
+            completionTokens: result.usage?.completion_tokens ?? null,
+            totalTokens: result.usage?.total_tokens ?? null,
+        })
         const raw = result.choices?.[0]?.message?.content
         if (typeof raw !== 'string') return []
 
@@ -427,6 +444,11 @@ You may include more than one marker only if each milestone independently reache
         }
 
         const completion = await openAIResponse.json()
+        console.info('Jbot coaching model usage:', {
+            promptTokens: completion.usage?.prompt_tokens ?? null,
+            completionTokens: completion.usage?.completion_tokens ?? null,
+            totalTokens: completion.usage?.total_tokens ?? null,
+        })
         const rawAssistantContent =
             completion.choices?.[0]?.message?.content
 
