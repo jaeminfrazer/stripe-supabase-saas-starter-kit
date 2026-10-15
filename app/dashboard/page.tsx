@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import JourneyProgress from '@/components/journey-progress'
-import ResourceCompletion from '@/components/resource-completion'
 import { createClient } from '@/utils/supabase/server'
 
 export default async function DashboardPage() {
@@ -12,14 +11,12 @@ export default async function DashboardPage() {
         user?.user_metadata?.full_name?.split(' ')[0] ||
         'there'
 
-    const [{ data: intake }, { data: assessments }, { data: resources }, { data: resourceProgress }] = user
+    const [{ data: intake }, { data: assessments }] = user
         ? await Promise.all([
             supabase.from('jbot_onboarding_data').select('tell_me_about_you,hindrances,personality,pain_points,goals,what_have_you_tried,history').eq('user_id', user.id).maybeSingle(),
             supabase.from('jbot_stage_assessments').select('milestone_number,status,assessment').eq('user_id', user.id).in('milestone_number', [4, 5, 7]),
-            supabase.from('jbot_resources').select('id,title,description,category,tags').order('created_at', { ascending: true }),
-            supabase.from('user_resource_progress').select('resource_id').eq('user_id', user.id),
         ])
-        : [{ data: null }, { data: [] }, { data: [] }, { data: [] }]
+        : [{ data: null }, { data: [] }]
 
     const intakeFields = ['tell_me_about_you', 'hindrances', 'personality', 'pain_points', 'goals', 'what_have_you_tried', 'history'] as const
     const onboardingComplete = Boolean(intake && intakeFields.every(field => typeof intake[field] === 'string' && intake[field].trim().length > 0))
@@ -68,16 +65,13 @@ export default async function DashboardPage() {
 
                 <JourneyProgress onboardingComplete={onboardingComplete} assessmentStatuses={assessmentStatuses} />
 
-                <section className="border border-black/10 bg-white p-5 sm:p-7">
-                    <div className="mb-5">
+                <section className="flex flex-col gap-5 border border-black/10 bg-white p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+                    <div>
                         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">Your library</p>
-                        <h2 className="mt-2 text-xl font-semibold tracking-tight">Resources you’ve completed</h2>
-                        <p className="mt-2 text-sm leading-6 text-neutral-600">Tick off resources as you finish them. This is a record of participation, separate from milestone assessment.</p>
+                        <h2 className="mt-2 text-xl font-semibold tracking-tight">Explore your resources</h2>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">Browse videos, readings, audio and practical exercises in one place. Open a resource to view it or access its file.</p>
                     </div>
-                    <ResourceCompletion
-                        resources={(resources ?? []) as { id: string; title: string; category: string | null; description: string | null; tags: string[] | null }[]}
-                        completedIds={(resourceProgress ?? []).map(item => item.resource_id)}
-                    />
+                    <Link href="/resources" className="inline-flex h-11 shrink-0 items-center bg-black px-5 text-sm font-medium text-white transition hover:bg-neutral-800">Open resource library ↗</Link>
                 </section>
 
                 <div className="grid gap-4 md:grid-cols-2">
