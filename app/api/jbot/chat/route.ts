@@ -19,15 +19,6 @@ type IntakeData = {
     history: string | null
 }
 
-type KnowledgeRecord = {
-    id: string
-    title: string
-    category: string | null
-    content: string
-    when_to_use: string | null
-    retrieval_rules: string | null
-}
-
 function buildIntakeContext(intake: IntakeData) {
     return `
 CLIENT INTAKE
@@ -220,10 +211,6 @@ export async function POST(request: Request) {
                 { status: 500 }
             )
         }
-
-        // Knowledge selector intentionally disabled for this test.
-        // The active master prompt is the sole coaching methodology source.
-        const selectedKnowledge: KnowledgeRecord[] = []
 
         const intakeContext = buildIntakeContext(intake as IntakeData)
 
