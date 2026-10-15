@@ -28,11 +28,6 @@ type KnowledgeRecord = {
     retrieval_rules: string | null
 }
 
-type KnowledgeMetadata = Pick<
-    KnowledgeRecord,
-    'id' | 'title' | 'category' | 'when_to_use' | 'retrieval_rules'
->
-
 function buildIntakeContext(intake: IntakeData) {
     return `
 CLIENT INTAKE
@@ -66,122 +61,6 @@ ${intake.what_have_you_tried ?? 'No answer provided.'}
 7. HISTORY
 
 ${intake.history ?? 'No answer provided.'}
-`
-}
-
-async function selectKnowledgeRecords(
-    content: string,
-    history: StoredMessage[],
-    records: KnowledgeMetadata[],
-    conversationId: string,
-    turnNumber: number
-): Promise<string[]> {
-    if (!records.length) return []
-
-    // The latest user message is already supplied separately below. It is also
-    // present in persisted history, so exclude that duplicate to avoid paying
-    // for the same text twice in the knowledge-selection request.
-    const historyWithoutDuplicateLatest = [...history]
-    const lastMessage = historyWithoutDuplicateLatest[historyWithoutDuplicateLatest.length - 1]
-    if (
-        lastMessage?.role === 'user' &&
-        lastMessage.content.trim() === content.trim()
-    ) {
-        historyWithoutDuplicateLatest.pop()
-    }
-
-    const recentHistory = historyWithoutDuplicateLatest.slice(-8).map((item) => ({
-        role: item.role,
-        content: item.content.slice(0, 1500),
-    }))
-
-    try {
-        const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-        const response = await fetch(
-            'https://api.openai.com/v1/chat/completions',
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-                },
-                body: JSON.stringify({
-                    model,
-                    response_format: { type: 'json_object' },
-                    messages: [
-                        {
-                            role: 'system',
-                            content: `You select internal coaching knowledge for J-Bot. Choose records that materially help respond to the latest user message in the context of recent conversation. Use descriptions and retrieval rules, not keyword matching alone. Choose zero to three records; prefer fewer when sufficient. Do not choose a record just because it might be generally relevant. DEFINING-MOMENT PRIORITY: If the latest message or recent conversation is investigating the origin of insecurity, an already-identified accusation, a childhood scene, or what an early experience came to mean about the user's nature, select the record titled "The Defining Moment" whenever that record is in the supplied list. Do not omit it merely because the latest message does not repeat the words "defining moment". Still select any other records that materially help, within the three-record maximum. Return only valid JSON in this shape: {"ids":["record-id"]}. Use only exact IDs from the supplied list. If no record would materially help and the defining-moment condition does not apply, return {"ids":[]}.`,
-                        },
-                        {
-                            role: 'user',
-                            content: JSON.stringify({
-                                latest_user_message: content,
-                                recent_conversation: recentHistory,
-                                available_knowledge: records,
-                            }),
-                        },
-                    ],
-                }),
-            }
-        )
-
-        if (!response.ok) {
-            console.error('Jbot knowledge selection failed:', await response.text())
-            return []
-        }
-
-        const result = await response.json()
-        console.info('Jbot API usage:', {
-            callType: 'knowledge_selector',
-            conversationId,
-            turnNumber,
-            model,
-            promptTokens: result.usage?.prompt_tokens ?? null,
-            cachedPromptTokens: result.usage?.prompt_tokens_details?.cached_tokens ?? null,
-            completionTokens: result.usage?.completion_tokens ?? null,
-            totalTokens: result.usage?.total_tokens ?? null,
-        })
-        const raw = result.choices?.[0]?.message?.content
-        if (typeof raw !== 'string') return []
-
-        const parsed = JSON.parse(raw)
-        if (!Array.isArray(parsed.ids)) return []
-
-        const allowedIds = new Set(records.map((record) => record.id))
-        const validIds = parsed.ids.filter(
-            (id: unknown): id is string =>
-                typeof id === 'string' && allowedIds.has(id)
-        )
-        const uniqueIds: string[] = []
-        for (const id of validIds) {
-            if (!uniqueIds.includes(id)) uniqueIds.push(id)
-            if (uniqueIds.length === 3) break
-        }
-        return uniqueIds
-    } catch (error) {
-        // Knowledge retrieval must not make an otherwise working chat unavailable.
-        console.error('Jbot knowledge selection error:', error)
-        return []
-    }
-}
-
-function buildKnowledgeContext(records: KnowledgeRecord[]) {
-    if (!records.length) return ''
-
-    return `INTERNAL COACHING KNOWLEDGE
-
-The following records were selected because they may be relevant to this turn. Use them as specialised reference material, following their retrieval rules. Apply the relevant ideas to the user's actual experience; do not recite the records or mention this internal retrieval process. Do not force a framework when it does not fit.
-
-${records.map((record) => `
----
-TITLE: ${record.title}
-CATEGORY: ${record.category ?? 'Uncategorised'}
-WHEN TO USE: ${record.when_to_use ?? 'Not specified'}
-RETRIEVAL RULES: ${record.retrieval_rules ?? 'Not specified'}
-CONTENT:
-${record.content}
----`).join('\n')}
 `
 }
 
@@ -342,59 +221,11 @@ export async function POST(request: Request) {
             )
         }
 
-        // Load lightweight metadata first, then let OpenAI choose the records
-        // that are relevant to this turn. Full record contents are fetched only
-        // for the selected IDs.
-        const { data: knowledgeMetadata, error: knowledgeMetadataError } =
-            await supabase
-                .from('jbot_knowledge')
-                .select('id, title, category, when_to_use, retrieval_rules')
-                .eq('active', true)
-
-        let selectedKnowledge: KnowledgeRecord[] = []
-
-        if (knowledgeMetadataError) {
-            // Keep chat available if the optional knowledge library is unavailable.
-            console.error('Unable to load Jbot knowledge metadata:', knowledgeMetadataError)
-        } else {
-            const turnNumber = Math.ceil(((history ?? []) as StoredMessage[]).length / 2)
-            const selectedIds = await selectKnowledgeRecords(
-                content,
-                (history ?? []) as StoredMessage[],
-                (knowledgeMetadata ?? []) as KnowledgeMetadata[],
-                verifiedConversationId,
-                turnNumber
-            )
-
-            if (selectedIds.length) {
-                const { data: knowledgeRecords, error: knowledgeRecordsError } =
-                    await supabase
-                        .from('jbot_knowledge')
-                        .select('id, title, category, content, when_to_use, retrieval_rules')
-                        .eq('active', true)
-                        .in('id', selectedIds)
-
-                if (knowledgeRecordsError) {
-                    console.error('Unable to load selected Jbot knowledge:', knowledgeRecordsError)
-                } else {
-                    selectedKnowledge = (knowledgeRecords ?? []) as KnowledgeRecord[]
-                }
-            }
-        }
-
-        // Diagnostic only: log selected record metadata, never user messages or record content.
-        console.info('Jbot knowledge retrieval result:', {
-            activeRecordCount: knowledgeMetadata?.length ?? 0,
-            selectedRecordCount: selectedKnowledge.length,
-            selectedRecords: selectedKnowledge.map((record) => ({
-                id: record.id,
-                title: record.title,
-                category: record.category,
-            })),
-        })
+        // Knowledge selector intentionally disabled for this test.
+        // The active master prompt is the sole coaching methodology source.
+        const selectedKnowledge: KnowledgeRecord[] = []
 
         const intakeContext = buildIntakeContext(intake as IntakeData)
-        const knowledgeContext = buildKnowledgeContext(selectedKnowledge)
 
         const assessmentCheckpointInstruction = `
 ASSESSMENT CHECKPOINTS — NATURAL POINT ONLY
@@ -430,9 +261,6 @@ You may include more than one marker only if each milestone independently reache
                             role: 'system',
                             content: intakeContext,
                         },
-                        ...(knowledgeContext
-                            ? [{ role: 'system', content: knowledgeContext }]
-                            : []),
                         ...((history ?? []) as StoredMessage[]).map((item) => ({
                             role:
                                 item.role === 'assistant'
