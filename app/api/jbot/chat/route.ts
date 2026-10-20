@@ -75,12 +75,12 @@ const RETRIEVAL_STOP_WORDS = new Set([
 ])
 
 function retrievalTerms(value: string) {
-    return [...new Set(
+    return Array.from(new Set(
         value.toLowerCase()
             .replace(/[^a-z0-9\s-]/g, ' ')
             .split(/\s+/)
             .filter((term) => term.length >= 3 && !RETRIEVAL_STOP_WORDS.has(term))
-    )]
+    ))
 }
 
 function rankKnowledge(records: KnowledgeRecord[], query: string) {
