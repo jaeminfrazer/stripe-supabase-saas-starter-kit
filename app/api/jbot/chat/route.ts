@@ -307,7 +307,7 @@ The marker is internal and must never be shown to the client. If retrieval is no
             })),
         ]
 
-        async function callCoachingModel(messages: typeof conversationMessages, callType: string) {
+        const callCoachingModel = async (messages: typeof conversationMessages, callType: string) => {
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
