@@ -110,6 +110,33 @@ function rankKnowledge(records: KnowledgeRecord[], query: string) {
         .map((item) => item.record)
 }
 
+type MemoryRecord = {
+    id: string
+    memory_type: 'client_declared' | 'investigation_fact' | 'working_hypothesis' | 'goal' | 'preference'
+    content: string
+    created_at: string
+}
+
+function rankMemories(records: MemoryRecord[], query: string, limit: number) {
+    const terms = retrievalTerms(query)
+    return records
+        .map((record) => {
+            const memoryTerms = retrievalTerms(record.content)
+            let score = 0
+            for (const term of terms) {
+                if (memoryTerms.includes(term)) score += 1
+            }
+            return { record, score }
+        })
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score || b.record.created_at.localeCompare(a.record.created_at))
+        .slice(0, limit)
+        .map((item) => item.record)
+}
+
+const MEMORY_MARKER = /\[\[JBOT_MEMORY:\s*(\{[\s\S]*?\})\s*\]\]/i
+
+
 export async function POST(request: Request) {
     try {
         const supabase = createClient()
@@ -246,6 +273,45 @@ export async function POST(request: Request) {
             )
         }
 
+        const allHistory = (history ?? []) as StoredMessage[]
+        // Keep the immediate conversational thread, while persistent memories carry
+        // important details forward from earlier in the conversation.
+        const recentHistory = allHistory.slice(-20)
+
+        const { data: memoryRows, error: memoryError } = await supabase
+            .from('jbot_memories')
+            .select('id, memory_type, content, created_at')
+            .eq('user_id', verifiedUserId)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(100)
+
+        if (memoryError) {
+            console.error('Jbot memory retrieval failed:', memoryError.message)
+        }
+
+        const availableMemories = (memoryRows ?? []) as MemoryRecord[]
+        const coreMemories = availableMemories
+            .filter((memory) => memory.memory_type === 'client_declared')
+            .slice(0, 3)
+        const relevantMemories = rankMemories(
+            availableMemories,
+            content + '\n' + recentHistory.slice(-8).map((item) => item.content).join('\n'),
+            5
+        )
+        const selectedMemories = [...coreMemories]
+        for (const memory of relevantMemories) {
+            if (!selectedMemories.some((selected) => selected.id === memory.id)) {
+                selectedMemories.push(memory)
+            }
+        }
+        const memoryContext = selectedMemories.length
+            ? `PERSISTENT CLIENT MEMORIES
+The following records were explicitly saved or retained from earlier conversations. Use them to preserve continuity, not as unquestionable truth. Distinguish the client's reported facts, their interpretations, and any working hypotheses. A saved memory does not prove that its interpretation is objectively correct. If a memory is a working hypothesis, keep it provisional. Relevant memories are selected for this turn; do not force unrelated memories into the conversation.
+
+${selectedMemories.map((memory) => `[${memory.memory_type}] ${memory.content}`).join('\\n\\n')}`
+            : ''
+
         const {
             data: promptRecord,
             error: promptError,
@@ -279,7 +345,7 @@ You may include more than one marker only if each milestone independently reache
 `
 
         const coachingModel = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-        const turnNumber = Math.ceil(((history ?? []) as StoredMessage[]).length / 2)
+        const turnNumber = Math.ceil(allHistory.length / 2)
         const conversationMessages = [
             {
                 role: 'system' as const,
@@ -293,6 +359,16 @@ You may include more than one marker only if each milestone independently reache
                 role: 'system' as const,
                 content: intakeContext,
             },
+            ...(memoryContext ? [{ role: 'system' as const, content: memoryContext }] : []),
+            ...(/remember\s+(this|that|please)|please\s+remember|remember:/i.test(content)
+                ? [{
+                    role: 'system' as const,
+                    content: `EXPLICIT MEMORY SAVE REQUEST
+The client's latest message explicitly asks you to remember something. Identify the specific information they want retained, using the surrounding conversation only to resolve what "this" or "that" refers to. Save a concise, faithful record of the client's meaning. Do not convert an interpretation into an established fact, do not invent missing details, and do not store your own speculation as the client's account. Choose one type: client_declared, investigation_fact, working_hypothesis, goal, or preference. Include exactly one machine-readable marker on its own final line:
+[[JBOT_MEMORY:{"memory_type":"client_declared","content":"concise faithful memory"}]]
+Use valid JSON, escape quotation marks and newlines correctly, and keep the content under 1000 characters. The marker is internal and must never be shown to the client. Do not emit a marker unless the client explicitly requested that something be remembered.`,
+                }]
+                : []),
             {
                 role: 'system' as const,
                 content: `EMERGENCY-ONLY KNOWLEDGE RETRIEVAL
@@ -301,7 +377,7 @@ Do not retrieve knowledge during ordinary progress. First identify the precise u
 [[JBOT_RETRIEVE: concise natural-language description of the unresolved question and knowledge needed]]
 The marker is internal and must never be shown to the client. If retrieval is not needed, do not emit it. The server will retrieve relevant active knowledge documents and ask you to reconsider the response. Do not mention this mechanism to the client.`,
             },
-            ...((history ?? []) as StoredMessage[]).map((item) => ({
+            ...recentHistory.map((item) => ({
                 role: item.role === 'assistant' ? 'assistant' as const : 'user' as const,
                 content: item.content,
             })),
@@ -424,6 +500,58 @@ Reconsider the investigation from the client's actual data and desire. Identify 
 
         if (!retrievalUsed) {
             rawAssistantContent = rawAssistantContent.replace(RETRIEVAL_MARKER, '').trim()
+        }
+
+        let memorySaveFailed = false
+        const memoryMatch = rawAssistantContent.match(MEMORY_MARKER)
+        if (memoryMatch) {
+            try {
+                const parsedMemory = JSON.parse(memoryMatch[1]) as {
+                    memory_type?: MemoryRecord['memory_type']
+                    content?: string
+                }
+                const allowedMemoryTypes = new Set([
+                    'client_declared',
+                    'investigation_fact',
+                    'working_hypothesis',
+                    'goal',
+                    'preference',
+                ])
+                const memoryContent = typeof parsedMemory.content === 'string'
+                    ? parsedMemory.content.trim().slice(0, 1000)
+                    : ''
+                const memoryType = parsedMemory.memory_type && allowedMemoryTypes.has(parsedMemory.memory_type)
+                    ? parsedMemory.memory_type
+                    : 'client_declared'
+
+                if (memoryContent) {
+                    const { error: saveMemoryError } = await supabase
+                        .from('jbot_memories')
+                        .insert({
+                            user_id: verifiedUserId,
+                            conversation_id: verifiedConversationId,
+                            source_message_id: userMessage.id,
+                            memory_type: memoryType,
+                            content: memoryContent,
+                        })
+                    if (saveMemoryError) {
+                        memorySaveFailed = true
+                        console.error('Jbot memory save failed:', saveMemoryError.message)
+                    }
+                } else {
+                    memorySaveFailed = true
+                }
+            } catch (error) {
+                memorySaveFailed = true
+                console.error('Jbot memory marker could not be parsed:', error)
+            }
+        } else if (/remember\s+(this|that|please)|please\s+remember|remember:/i.test(content)) {
+            memorySaveFailed = true
+        }
+
+        rawAssistantContent = rawAssistantContent.replace(MEMORY_MARKER, '').trim()
+        if (memorySaveFailed) {
+            rawAssistantContent = `I couldn't reliably save that memory, so I don't want to claim I've remembered it. Please try asking me to remember it again.\\n\\n${rawAssistantContent}`
         }
 
         const assessmentMilestones = [...rawAssistantContent.matchAll(/\[\[JBOT_ASSESS:(4|5|7)\]\]/g)]
