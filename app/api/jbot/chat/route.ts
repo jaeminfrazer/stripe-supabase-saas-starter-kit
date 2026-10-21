@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { createHash } from 'node:crypto'
 import { createClient } from '@/utils/supabase/server'
 import { hasJbotAccess } from '@/utils/access/has-jbot-access'
 
@@ -252,7 +251,7 @@ export async function POST(request: Request) {
             error: promptError,
         } = await supabase
             .from('jbot_system_prompt')
-            .select('id, updated_at, prompt')
+            .select('prompt')
             .eq('active', true)
             .order('updated_at', { ascending: false })
             .limit(1)
@@ -267,14 +266,6 @@ export async function POST(request: Request) {
                 { status: 500 }
             )
         }
-
-        console.info('Jbot active prompt diagnostic:', {
-            conversationId: verifiedConversationId,
-            promptId: promptRecord.id,
-            promptUpdatedAt: promptRecord.updated_at,
-            promptSha256: createHash('sha256').update(promptRecord.prompt).digest('hex'),
-            deploymentCommit: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
-        })
 
         const intakeContext = buildIntakeContext(intake as IntakeData)
 
