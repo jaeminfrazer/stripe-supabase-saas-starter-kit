@@ -134,7 +134,7 @@ function rankMemories(records: MemoryRecord[], query: string, limit: number) {
         .map((item) => item.record)
 }
 
-const MEMORY_MARKER = /\\[\\[JBOT_MEMORY:\\s*(\\{[\\s\\S]*?\\})\\s*\\]\\]/i
+const MEMORY_MARKER = /\[\[JBOT_MEMORY:\s*(\{[\s\S]*?\})\s*\]\]/i
 
 
 export async function POST(request: Request) {
@@ -296,7 +296,7 @@ export async function POST(request: Request) {
             .slice(0, 3)
         const relevantMemories = rankMemories(
             availableMemories,
-            content + '\\n' + recentHistory.slice(-8).map((item) => item.content).join('\\n'),
+            content + '\n' + recentHistory.slice(-8).map((item) => item.content).join('\n'),
             5
         )
         const selectedMemories = [...coreMemories]
@@ -360,7 +360,7 @@ You may include more than one marker only if each milestone independently reache
                 content: intakeContext,
             },
             ...(memoryContext ? [{ role: 'system' as const, content: memoryContext }] : []),
-            ...(/remember\\s+(this|that|please)|please\\s+remember|remember:/i.test(content)
+            ...(/remember\s+(this|that|please)|please\s+remember|remember:/i.test(content)
                 ? [{
                     role: 'system' as const,
                     content: `EXPLICIT MEMORY SAVE REQUEST
@@ -545,7 +545,7 @@ Reconsider the investigation from the client's actual data and desire. Identify 
                 memorySaveFailed = true
                 console.error('Jbot memory marker could not be parsed:', error)
             }
-        } else if (/remember\\s+(this|that|please)|please\\s+remember|remember:/i.test(content)) {
+        } else if (/remember\s+(this|that|please)|please\s+remember|remember:/i.test(content)) {
             memorySaveFailed = true
         }
 
